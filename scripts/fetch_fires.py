@@ -54,21 +54,19 @@ def region_of(lon, lat):
     return len(REGIONS)  # "Elsewhere"
 
 
-def fetch(sensor, key, date=None):
-    url = f"{API}/{key}/{sensor}/world/1" + (f"/{date}" if date else "")
+def fetch(sensor, key, date):
+    # Always ask for an explicit, complete UTC day. A dateless query means "the
+    # current UTC day", which is only partially processed for most of the day —
+    # e.g. a run at 02:30 UTC once got 11 detections from a sensor instead of
+    # ~65,000 because only the first granules of the new day existed yet.
+    url = f"{API}/{key}/{sensor}/world/1/{date}"
     req = urllib.request.Request(url, headers={"User-Agent": "global-fire-map/1.0"})
     with urllib.request.urlopen(req, timeout=180) as r:
         body = r.read().decode("utf-8", "replace")
     if body.lstrip().lower().startswith(("invalid", "<!doctype", "<html")):
         raise RuntimeError(f"{sensor}: FIRMS rejected the request. Check FIRMS_MAP_KEY.")
     rows = list(csv.DictReader(io.StringIO(body)))
-    if not rows and date is None:
-        # Just after UTC midnight no granules for the new day are processed yet
-        # and the dateless query returns an empty CSV. Use the previous UTC day.
-        yday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
-        return fetch(sensor, key, yday)
-    print(f"  {sensor}: {len(rows):,} detections" + (f" ({date})" if date else ""),
-          file=sys.stderr)
+    print(f"  {sensor}: {len(rows):,} detections ({date})", file=sys.stderr)
     return rows
 
 
@@ -78,7 +76,9 @@ def main():
         sys.exit("FIRMS_MAP_KEY is not set. Get one at "
                  "https://firms.modaps.eosdis.nasa.gov/api/map_key/")
 
-    print("Fetching FIRMS world data...", file=sys.stderr)
+    day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    print(f"Fetching FIRMS world data for {day} (last complete UTC day)...",
+          file=sys.stderr)
     # slots: n, frp sum, lon*w sum, lat*w sum, max brightness, weight sum
     cells = defaultdict(lambda: [0, 0.0, 0.0, 0.0, 0.0, 0.0])
     total = 0
@@ -86,7 +86,7 @@ def main():
 
     for sensor in SENSORS:
         try:
-            rows = fetch(sensor, key)
+            rows = fetch(sensor, key, day)
         except Exception as exc:                      # one dead sensor must not kill the run
             print(f"  {sensor}: skipped ({exc})", file=sys.stderr)
             continue

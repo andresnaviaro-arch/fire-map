@@ -97,6 +97,9 @@ tr:last-child td{border-bottom:0}
 #readout dt{color:var(--pine-soft)}
 #readout dd{text-align:right;font-variant-numeric:tabular-nums}
 #readout .cite{font-size:10.5px;line-height:1.5;color:var(--pine-soft);margin-top:10px;font-family:var(--f-mono)}
+#readout .cite a{color:#EFEDE6;text-decoration:underline;text-underline-offset:2px}
+#readout .langbadge{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid var(--pine-soft);
+  border-radius:3px;font-size:9px;letter-spacing:.08em;vertical-align:1px}
 
 footer{margin-top:auto}
 footer .pad{padding-top:15px;padding-bottom:20px}
@@ -252,15 +255,18 @@ const BORDERS=[[[40.32,-10.32],[39.52,-10.9],[38.43,-11.29],[37.83,-11.27],[37.4
    Edit this list freely — it is deliberately separate from
    satellite detections so the two are never confused. */
 const INCIDENTS = [
-  {lon:-0.85, lat:44.75, name:"Gironde", note:"~42,000 ha burnt; evacuations around Bordeaux passed 220,000 people — described by officials as France's largest peacetime evacuation.", src:"Euronews / French Interior Ministry", date:"2026-07-26"},
-  {lon:-1.16, lat:44.39, name:"Biscarrosse – Parentis-en-Born", note:"Separate Landes blaze, 2,500+ ha, over 23,000 people evacuated.", src:"EFFIS / press reports", date:"2026-07-24"},
-  {lon:-4.62, lat:40.29, name:"Ávila – La Adrada", note:"Spain declared a national emergency as several fires spread; part of a 320,000-person evacuation total across France and Spain.", src:"AP / Euronews", date:"2026-07-25"},
-  {lon:14.5, lat:37.6, name:"Sicily", note:"Italy's main hotspot — over 1,000 firefighting interventions since 18 July; evacuations near Ragalna, Monreale and Santo Stefano di Quisquina.", src:"EFFIS summary", date:"2026-07-24"},
-  {lon:-92.5, lat:49.8, name:"Northwestern Ontario", note:"Cluster of out-of-control fires; smoke pushed south into the US Midwest and Northeast.", src:"CIFFC / CBC", date:"2026-07-25"},
-  {lon:-92.9, lat:48.2, name:"Far northern Minnesota", note:"Numerous fires ignited 13 July alongside the Ontario cluster, threatening communities on both sides of the border.", src:"CIRA / NIFC", date:"2026-07-20"},
-  {lon:-118.0, lat:65.0, name:"Northwest Territories", note:"Many fires venting heavy smoke over the territory and Great Bear Lake.", src:"CIFFC", date:"2026-07-20"},
-  {lon:-73.0, lat:51.5, name:"Quebec interior", note:"Among the four provinces holding most of Canada's out-of-control fires.", src:"CIFFC", date:"2026-07-20"},
-  {lon:-121.4, lat:49.9, name:"Brunswick Creek, B.C.", note:"Early-season interior British Columbia fire near Boston Bar.", src:"Canadian Press", date:"2026-07-09"}
+  {lon:15.995, lat:-10.387, name:"Angola miombo belt", note:"The largest fire complex on Earth in this dataset — about 3,600 detections and 45,000 MW across the Malanje–Cuanza Sul savanna. Seasonal agricultural burning at continental scale, almost entirely unreported.", src:"GWIS country profile (Angola)", url:"https://gwis.jrc.ec.europa.eu/apps/country.profile/", lang:"en", date:"2026-07-26"},
+  {lon:28.131, lat:-7.067, name:"Katanga plateaus, DR Congo", note:"Dry-season savanna burning across Haut-Lomami and Tanganyika provinces — 2,200+ detections in this complex alone, with no news coverage found.", src:"GWIS country profile (DR Congo)", url:"https://gwis.jrc.ec.europa.eu/apps/country.profile/", lang:"en", date:"2026-07-26"},
+  {lon:28.679, lat:-2.112, name:"Kalehe, Sud-Kivu, DR Congo", note:"Civil society in Kalehe territory raised an alarm over deliberate dry-season burning in the Mbinga Nord grouping, destroying coffee, quinquina and eucalyptus plantations and beekeeping sites.", src:"Radio Okapi", url:"https://www.radiookapi.net/2026/07/08/actualite/societe/sud-kivu-la-societe-civile-alerte-sur-les-feux-de-brousse-criminels", lang:"fr", date:"2026-07-08"},
+  {lon:-120.657, lat:44.5, name:"Rowe Creek Complex, Oregon", note:"Four merged fires totalling ~148,500 acres at 21% containment; the Crosswhite Fire alone covers ~132,700 acres. Evacuations from Gilliam to Jefferson counties amid roughly 20 large fires statewide.", src:"KOIN 6 News", url:"https://www.koin.com/news/oregon/wildfire-evacuations-rowe-hay-creek-complex-fire-central-oregon-what-to-know/", lang:"en", date:"2026-07-22"},
+  {lon:136.097, lat:-16.686, name:"Gulf Country, N.T., Australia", note:"Dry-season savanna fire front near the McArthur River — about 1,400 detections in 24 hours. Part of the vast, routine northern burning tracked by NAFI rather than covered as news.", src:"North Australia & Rangelands Fire Information", url:"https://firenorth.org.au/", lang:"en", date:"2026-07-26"},
+  {lon:155.65, lat:68.503, name:"Srednekolymsky district, Yakutia", note:"Two fires of 35,425 and 14,926 ha burning in the Kolyma lowlands; six fires active across Yakutia with over 200 firefighters deployed, and a regional forest emergency in force since 10 July.", src:"Ekho Stolitsy (Yakutsk)", url:"https://exo-ykt.ru/articles/v-yakutii-prodolzhaetsya-tushenie-pozharov", lang:"ru", date:"2026-07-26"},
+  {lon:-0.927, lat:44.783, name:"Gironde – Bassin d'Arcachon", note:"42,000 ha burnt in five days from a fire that started at Saumos, at times consuming 800–1,000 ha per hour; 220,000 people evacuated and about 240 houses destroyed.", src:"franceinfo", url:"https://www.franceinfo.fr/environnement/evenements-meteorologiques-extremes/incendies-et-feux-de-foret/carte-suivez-au-fil-des-heures-l-avancee-des-incendies-qui-ravagent-la-gironde-et-les-landes_8120696.html", lang:"fr", date:"2026-07-26"},
+  {lon:-1.109, lat:44.39, name:"Biscarrosse – Parentis-en-Born", note:"The Landes fire is still not contained, with virulent flare-ups near Parentis-en-Born; 3,600 ha burnt and 198 buildings destroyed so far.", src:"franceinfo", url:"https://www.franceinfo.fr/environnement/evenements-meteorologiques-extremes/incendies-et-feux-de-foret/carte-suivez-au-fil-des-heures-l-avancee-des-incendies-qui-ravagent-la-gironde-et-les-landes_8120696.html", lang:"fr", date:"2026-07-26"},
+  {lon:-4.612, lat:40.328, name:"Ávila – Burgohondo, Spain", note:"Now the largest fire in Spain's recorded history at ~50,000 ha, spreading from Burgohondo into Madrid and Toledo provinces; roughly 90,000 people evacuated or confined.", src:"The Objective", url:"https://theobjective.com/espana/2026-07-26/incendio-avila-mayor-historia-espana-50000-hectareas-quemadas/", lang:"es", date:"2026-07-26"},
+  {lon:-59.082, lat:-18.335, name:"Chiquitania, Bolivia", note:"Fires spreading across eastern Santa Cruz — including 2,538 ha inside Otuquis National Park — while crews report shortages of both water and diesel; ministers ordered investigations into agricultural burning.", src:"Infobae América", url:"https://www.infobae.com/america/america-latina/2026/07/20/incendios-forestales-se-extienden-en-el-este-y-sur-de-bolivia-en-medio-de-escasez-de-agua-y-diesel/", lang:"es", date:"2026-07-20"},
+  {lon:-122.433, lat:62.334, name:"Dehcho region, N.W.T., Canada", note:"Fire FS015 advanced to within 5 km of Wrigley, evacuated since late June; crews lit a planned burn on 21 July in 31°C heat to shield the community.", src:"Cabin Radio", url:"https://cabinradio.ca/302050/news/environment/wildfires/planned-burn-begins-in-bid-to-protect-wrigley-from-wildfire/", lang:"en", date:"2026-07-21"},
+  {lon:110.434, lat:0.407, name:"West Kalimantan, Indonesia", note:"BMKG warned of rising forest- and land-fire risk across West Kalimantan for 25–31 July as the dry season sets in, with peatland areas most exposed; authorities urged patrols and an end to burn-clearing.", src:"Suara Kalbar", url:"https://www.suarakalbar.co.id/2026/07/bmkg-kalbar-ingatkan-potensi-karhutla-meningkat-hingga-akhir-juli-2026/", lang:"id", date:"2026-07-25"}
 ];
 
 /* ---------- state ---------- */
@@ -459,7 +465,21 @@ function showReadout(hit){
     document.getElementById('ro-dl').innerHTML =
       `<dt>Reported</dt><dd>${it.date}</dd>` +
       `<dt>Position</dt><dd>${it.lat.toFixed(2)}°, ${it.lon.toFixed(2)}°</dd>`;
-    document.getElementById('ro-cite').textContent = it.note + '  — ' + it.src;
+    const cite = document.getElementById('ro-cite');
+    cite.textContent = it.note + '  — ' + it.src;
+    if (it.url){
+      cite.appendChild(document.createTextNode(' · '));
+      const a = document.createElement('a');
+      a.href = it.url; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = 'read the report ↗';
+      cite.appendChild(a);
+    }
+    if (it.lang && it.lang !== 'en'){
+      const b = document.createElement('span');
+      b.className = 'langbadge';
+      b.textContent = it.lang.toUpperCase();
+      cite.appendChild(b);
+    }
   } else {
     const c = hit.data;
     document.getElementById('ro-kind').textContent =

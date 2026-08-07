@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A.G.E.N.T. Command Center</title>
+<style>
+  :root{
+    --bg:#050a12; --panel:#0a1220; --panel2:#0d1728; --line:#12304a;
+    --cyan:#37d2f2; --cyan-dim:#1d7d97; --ink:#dff3fb; --ink2:#8fb4c6; --muted:#4f7186;
+    --s-value:#3987e5; --s-feas:#199e70; --s-risk:#c98500;
+    --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+    --glow:0 0 10px rgba(55,210,242,.25), inset 0 0 18px rgba(55,210,242,.04);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:14px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+    background-image:
+      radial-gradient(1200px 600px at 70% -10%, rgba(30,90,140,.14), transparent),
+      linear-gradient(rgba(55,210,242,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(55,210,242,.025) 1px, transparent 1px);
+    background-size:auto, 44px 44px, 44px 44px;
+  }
+  .mono{font-family:ui-monospace, "Cascadia Code", Consolas, monospace}
+  h1,h2,h3{font-weight:600; letter-spacing:.14em; text-transform:uppercase}
+  a{color:var(--cyan)}
+
+  /* ---- top bar ---- */
+  #topbar{
+    display:flex; align-items:center; gap:18px; padding:10px 20px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(13,23,40,.95), rgba(10,18,32,.85));
+    position:sticky; top:0; z-index:20; flex-wrap:wrap;
+  }
+  #topbar .brand{font-size:15px; color:var(--cyan); text-shadow:0 0 12px rgba(55,210,242,.5)}
+  #topbar .brand small{color:var(--ink2); letter-spacing:.28em; font-size:9px; display:block}
+  #topbar .spacer{flex:1}
+  .hudstat{text-align:right}
+  .hudstat b{color:var(--cyan); font-size:16px}
+  .hudstat span{display:block; font-size:9px; letter-spacing:.22em; color:var(--muted); text-transform:uppercase}
+
+  /* ---- layout ---- */
+  #shell{display:flex; min-height:calc(100vh - 58px)}
+  #sidebar{
+    width:210px; flex:none; padding:16px 10px; border-right:1px solid var(--line);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .navbtn{
+    display:block; width:100%; text-align:left; padding:10px 12px;
+    background:transparent; color:var(--ink2); border:1px solid transparent;
+    font:inherit; font-size:11px; letter-spacing:.18em; text-transform:uppercase; cursor:pointer;
+    border-left:2px solid var(--line); transition:.15s;
+  }
+  .navbtn:hover{color:var(--ink); border-left-color:var(--cyan-dim)}
+  .navbtn.on{color:var(--cyan); border-left-color:var(--cyan); background:rgba(55,210,242,.06); text-shadow:0 0 8px rgba(55,210,242,.5)}
+  .navsep{margin:10px 4px 4px; font-size:8.5px; letter-spacing:.28em; color:var(--muted); text-transform:uppercase}
+  #projsel{width:100%; background:#081018; color:var(--cyan); border:1px solid var(--line);
+    font:inherit; font-size:11px; letter-spacing:.08em; padding:8px 6px}
+  .projbtns{display:flex; gap:4px; margin-top:4px}
+  .projbtns button{flex:1; background:transparent; border:1px solid var(--line); color:var(--muted);
+    font:inherit; font-size:9px; letter-spacing:.14em; text-transform:uppercase; padding:5px 2px; cursor:pointer}
+  .projbtns button:hover{color:var(--cyan); border-color:var(--cyan-dim)}
+  #view{flex:1; padding:22px 26px; max-width:1200px}
+
+  /* ---- panels ---- */
+  .panel{
+    position:relative; background:var(--panel); border:1px solid var(--line);
+    box-shadow:var(--glow); padding:16px 18px; margin-bottom:18px;
+  }
+  .panel::before,.panel::after{content:""; position:absolute; width:14px; height:14px; pointer-events:none}
+  .panel::before{top:-1px; left:-1px; border-top:1px solid var(--cyan); border-left:1px solid var(--cyan)}
+  .panel::after{bottom:-1px; right:-1px; border-bottom:1px solid var(--cyan); border-right:1px solid var(--cyan)}
+  .panel h2{font-size:11px; color:var(--cyan); margin-bottom:12px}
+  .panel h2 .sub{color:var(--muted); letter-spacing:.1em; margin-left:8px}
+
+  .grid{display:grid; gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  @media (max-width:900px){ .g2{grid-template-columns:1fr}
+    #shell{flex-direction:column} #sidebar{width:100%; flex-direction:row; flex-wrap:wrap; border-right:none; border-bottom:1px solid var(--line); align-items:center}
+    .navbtn{width:auto} .navsep{width:100%} #projsel{width:auto; flex:1} #view{padding:14px}
+  }
+
+  /* ---- overview ---- */
+  .ringwrap{display:flex; align-items:center; gap:22px; flex-wrap:wrap}
+  .bigring{width:150px; height:150px; flex:none}
+  .phasebar{margin:7px 0}
+  .phasebar .lbl{display:flex; justify-content:space-between; font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--ink2); margin-bottom:3px}
+  .track{height:8px; background:#081018; border:1px solid var(--line); position:relative}
+  .fill{height:100%; background:var(--cyan-dim); box-shadow:0 0 8px rgba(55,210,242,.5)}
+  .objective{font-size:15px; color:var(--ink)}
+  .objective .tag{color:var(--warn); font-size:10px; letter-spacing:.2em; display:block; margin-bottom:4px}
+  .statrow{display:flex; gap:26px; flex-wrap:wrap; margin-top:8px}
+  .stat b{font-size:22px; color:var(--cyan); font-weight:600}
+  .stat span{display:block; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
+  .projcard{border:1px solid var(--line); background:var(--panel2); padding:10px 14px; margin:8px 0; display:flex; gap:14px; align-items:center; cursor:pointer}
+  .projcard:hover{border-color:var(--cyan-dim)}
+  .projcard.on{border-color:var(--cyan)}
+  .projcard .pn{flex:1}
+  .projcard .pn b{letter-spacing:.04em}
+  .projcard .pn small{display:block; color:var(--muted); font-size:10px; letter-spacing:.14em; text-transform:uppercase}
+  .minitrack{width:110px}
+
+  /* ---- program timeline ---- */
+  .week{border:1px solid var(--line); background:var(--panel2); margin-bottom:10px}
+  .week>header{display:flex; align-items:center; gap:14px; padding:11px 14px; cursor:pointer; user-select:none}
+  .week .node{width:12px; height:12px; border:2px solid var(--muted); transform:rotate(45deg); flex:none}
+  .week.done .node{border-color:var(--good); background:var(--good); box-shadow:0 0 8px rgba(12,163,12,.6)}
+  .week.active .node{border-color:var(--cyan); box-shadow:0 0 8px rgba(55,210,242,.7)}
+  .week .wtitle{flex:1}
+  .week .wtitle b{letter-spacing:.06em}
+  .week .wtitle small{display:block; color:var(--muted); font-size:10px; letter-spacing:.18em; text-transform:uppercase}
+  .week .pct{color:var(--ink2); font-size:11px}
+  .week .body{display:none; padding:4px 16px 14px 40px; border-top:1px solid var(--line)}
+  .week.open .body{display:block}
+  .brief{color:var(--ink2); font-size:13px; margin:8px 0 12px}
+  .brief li{margin:3px 0 3px 16px}
+  .task{display:flex; gap:10px; align-items:flex-start; padding:5px 0; cursor:pointer}
+  .task input{accent-color:var(--cyan); margin-top:3px}
+  .task.checked{color:var(--muted); text-decoration:line-through}
+  .qtest{margin-top:10px; padding:9px 12px; border-left:2px solid var(--warn); background:rgba(250,178,25,.05); font-size:12.5px; color:var(--ink2)}
+  .qtest b{color:var(--warn); letter-spacing:.15em; font-size:10px}
+
+  /* ---- inventory ---- */
+  .wfcard{border:1px solid var(--line); background:var(--panel2); margin-bottom:10px}
+  .wfcard>header{display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer}
+  .wfcard .idx{color:var(--cyan); font-size:11px; width:26px; flex:none}
+  .wfcard .nm{flex:1; font-weight:600}
+  .chip{font-size:9px; letter-spacing:.14em; text-transform:uppercase; padding:2px 8px; border:1px solid var(--line); color:var(--muted)}
+  .chip.ok{color:var(--good); border-color:var(--good)}
+  .chip.pain{color:var(--crit); border-color:var(--crit)}
+  .wfcard .body{display:none; padding:10px 16px 16px; border-top:1px solid var(--line)}
+  .wfcard.open .body{display:block}
+  .field{margin:7px 0}
+  .field label{display:block; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:2px}
+  .field textarea,.field input[type=text]{
+    width:100%; background:#081018; border:1px solid var(--line); color:var(--ink);
+    padding:6px 8px; font:inherit; font-size:13px; resize:vertical; min-height:30px;
+  }
+  .field textarea{min-height:38px}
+  .field textarea:focus,.field input:focus{outline:none; border-color:var(--cyan-dim)}
+  .field select{background:#081018; color:var(--ink); border:1px solid var(--line); font:inherit; padding:6px}
+  .btn{
+    background:rgba(55,210,242,.08); border:1px solid var(--cyan-dim); color:var(--cyan);
+    font:inherit; font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    padding:8px 16px; cursor:pointer; transition:.15s;
+  }
+  .btn:hover{background:rgba(55,210,242,.16); box-shadow:0 0 10px rgba(55,210,242,.3)}
+  .btn.danger{border-color:var(--crit); color:var(--crit); background:rgba(208,59,59,.06)}
+  .btn.small{padding:5px 10px}
+  .togglerow{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap}
+
+  /* ---- scoring ---- */
+  .dimrow{display:grid; grid-template-columns:180px 1fr 30px; gap:12px; align-items:center; padding:4px 0}
+  .dimrow label{font-size:11.5px; color:var(--ink2)}
+  .dimrow input[type=range]{width:100%; accent-color:var(--cyan)}
+  .dimrow .val{color:var(--cyan); text-align:center}
+  .scoreout{display:flex; gap:24px; margin:12px 0; flex-wrap:wrap}
+  .scoreout .so b{font-size:20px}
+  .scoreout .so span{display:block; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
+  .rank{margin-top:6px}
+  .rankrow{margin:12px 0}
+  .rankrow .rlbl{display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px}
+  .rankrow .rlbl b{color:var(--ink)}
+  .rankrow .rlbl .prio{color:var(--cyan); font-size:11px}
+  .bar{display:grid; grid-template-columns:86px 1fr 44px; gap:8px; align-items:center; margin:2px 0}
+  .bar span{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+  .bar .bt{height:10px; background:#081018; border:1px solid var(--line)}
+  .bar .bf{height:100%; border-radius:0 3px 3px 0}
+  .bar .bn{font-size:11px; color:var(--ink2); text-align:right}
+  .prime{border:1px solid var(--cyan); box-shadow:0 0 14px rgba(55,210,242,.2); padding:10px 14px; margin-bottom:14px}
+  .prime .tag{color:var(--cyan); font-size:10px; letter-spacing:.24em}
+  .legend{display:flex; gap:16px; margin:4px 0 10px; font-size:10.5px; color:var(--ink2)}
+  .legend i{display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px}
+
+  /* ---- vault ---- */
+  .vrow{display:grid; grid-template-columns:1fr 130px 130px; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid rgba(18,48,74,.5)}
+  .vrow .vn small{color:var(--muted); display:block; font-size:10px; letter-spacing:.12em; text-transform:uppercase}
+  .vrow select{background:#081018; color:var(--ink); border:1px solid var(--line); font:inherit; font-size:12px; padding:4px}
+  .vrow input{background:#081018; color:var(--ink); border:1px solid var(--line); font:inherit; font-size:12px; padding:4px 6px; width:100%}
+  .st-none{color:var(--muted)} .st-prog{color:var(--warn)} .st-done{color:var(--good)}
+  @media (max-width:700px){ .vrow{grid-template-columns:1fr}; .dimrow{grid-template-columns:130px 1fr 26px} }
+
+  /* ---- log / data ---- */
+  .logentry{border-left:2px solid var(--cyan-dim); padding:6px 12px; margin:8px 0; background:var(--panel2)}
+  .logentry time{color:var(--muted); font-size:10px; letter-spacing:.12em; display:block}
+  .logentry .ptag{color:var(--cyan); font-size:10px; letter-spacing:.1em}
+  #login{width:100%; background:#081018; border:1px solid var(--line); color:var(--ink); font:inherit; padding:8px; min-height:60px}
+
+  .scanline{position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.07) 0 1px, transparent 1px 3px); opacity:.35}
+  footer{padding:14px 26px; color:var(--muted); font-size:10px; letter-spacing:.14em; border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<header id="topbar">
+  <div class="brand">A.G.E.N.T. // COMMAND CENTER<small>LEARN ONCE · BUILD MANY — AGENTIC AI PROGRAM &amp; MULTI-PROJECT PLATFORM</small></div>
+  <div class="spacer"></div>
+  <div class="hudstat"><b id="hud-proj" class="mono">—</b><span>Project</span></div>
+  <div class="hudstat"><b id="hud-pct" class="mono">0%</b><span>Program</span></div>
+  <div class="hudstat"><b id="hud-week" class="mono">—</b><span>Focus</span></div>
+  <div class="hudstat"><b id="hud-clock" class="mono">--:--</b><span id="hud-date">—</span></div>
+</header>
+
+<div id="shell">
+  <nav id="sidebar">
+    <div class="navsep">Learning Track</div>
+    <button class="navbtn" data-m="overview">◈ Overview</button>
+    <button class="navbtn" data-m="program">◈ Program</button>
+    <div class="navsep">Active Project</div>
+    <select id="projsel" onchange="switchProject(this.value)"></select>
+    <div class="projbtns">
+      <button onclick="addProject()" title="New project">+ New</button>
+      <button onclick="renameProject()" title="Rename active project">Rename</button>
+      <button onclick="deleteProject()" title="Delete active project">Del</button>
+    </div>
+    <button class="navbtn" data-m="inventory">◈ Inventory</button>
+    <button class="navbtn" data-m="scoring">◈ Scoring</button>
+    <button class="navbtn" data-m="vault">◈ Vault</button>
+    <div class="navsep">System</div>
+    <button class="navbtn" data-m="log">◈ Log &amp; Data</button>
+  </nav>
+  <main id="view"></main>
+</div>
+<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span></footer>
+
+<script>
+"use strict";
+/* ============================== STATIC DATA ============================== */
+const WEEKS = [
+ {id:"w1", part:1, code:"WK 01", title:"From Generative AI to Agentic Systems",
+  objective:"Build the mental model everything else hangs on.",
+  brief:["Prompts vs. workflows vs. agents — agency is a spectrum, not a binary.",
+    "Tool calling, structured outputs, RAG, memory and state.",
+    "The 11 components of any serious agentic system — your permanent review checklist.",
+    "Missing permission boundaries, evaluation, oversight, or logging? It's a demo, not a system."],
+  tasks:[{id:"w1_ex",label:"Classify 5 of your activities: retrieval / generation / decision support / automation / agentic"},
+    {id:"w1_map",label:"DELIVERABLE — AI & Agentic Systems Concept Map (1 page)"}],
+  qtest:"Could you use your concept map to explain to a colleague, in 10 minutes, what an agent is and is not?"},
+ {id:"w2", part:1, code:"WK 02", title:"Enterprise Architecture, Risk & Economics",
+  objective:"Understand the environment an agent lives in — systems, data, failure modes, cost.",
+  brief:["Auth vs. authz; read-only vs. write-enabled — the biggest safety lever.",
+    "Systems of record, lineage, PII. Hallucination, prompt injection, exfiltration — and their controls.",
+    "Cost = context size × calls per run × runs per day.",
+    "Core rule: use the LEAST autonomous system that produces the outcome. 7-rung escalation ladder."],
+  tasks:[{id:"w2_sketch",label:"Sketch the systems an agent in your role would touch (read/write, record-of-truth, classification)"},
+    {id:"w2_primer",label:"DELIVERABLE — Enterprise AI Architecture Primer (VP-readable, 2–3 pages)"}],
+  qtest:"Hand the primer to a non-technical colleague. Can they retell the escalation ladder and the 3 failure modes?"},
+ {id:"a0", part:2, code:"ASSIGN 0", title:"Workflow Inventory (First Assignment)",
+  objective:"10–15 recurring workflows captured honestly. Everything downstream depends on this.",
+  brief:["A draft of 12 Wesco workflows is pre-loaded in Project 01's INVENTORY — correct, kill, or extend it.",
+    "Confirm real frequencies and hours. Name the real systems. Mark your top-3 pains.",
+    "Each new project you create later starts with its own empty inventory — same method, new domain."],
+  tasks:[{id:"a0_conf",label:"All inventory entries reviewed & confirmed (INVENTORY module)"},
+    {id:"a0_pain",label:"Top 3 pains marked"},
+    {id:"a0_sys",label:"Real systems named (CRM, quoting, ERP visibility, export/API availability)"}],
+  qtest:"Rough-but-honest beats polished-but-guessed. Are the hours real?"},
+ {id:"w3", part:2, code:"WK 03 · A", title:"Audit — Map the Real Work",
+  objective:"Map how work actually happens on your top 3–5 candidates — not how the manual says.",
+  brief:["15 audit questions: triggers, outcomes, handoffs, waits, exceptions, undocumented judgment.",
+    "Collect evidence: interviews, screen recordings, real threads, CRM records, volumes & times.",
+    "Three case types each: typical, difficult, failure."],
+  tasks:[{id:"w3_map",label:"Current-state process map (swimlanes, incl. real waits & loops)"},
+    {id:"w3_raci",label:"Roles & responsibilities matrix"},
+    {id:"w3_sys",label:"Systems & data inventory"},
+    {id:"w3_dec",label:"Decision inventory (rules vs. judgment)"},
+    {id:"w3_bott",label:"Bottleneck register"},
+    {id:"w3_exc",label:"Exception catalogue"},
+    {id:"w3_base",label:"BASELINE performance table — the 'before' picture for every later claim"}],
+  qtest:"Show the map to someone who does the work. 'You even caught the annoying part' = done. 'Well, officially…' = you mapped the manual. Redo."},
+ {id:"w4", part:2, code:"WK 04 · G", title:"Gauge — Score & Select",
+  objective:"Measure business outcomes, not AI outputs. Select ONE workflow on evidence.",
+  brief:["'So what?' test — chase every benefit until it terminates in money, capacity, or service.",
+    "Score all candidates 1–5 on 10 dimensions (SCORING module does the math).",
+    "Selection rule: highest Value × Feasibility whose Risk you can control. Weight time-to-value heavily — project #1's job is proving the methodology."],
+  tasks:[{id:"w4_score",label:"All candidates scored in the SCORING module"},
+    {id:"w4_tree",label:"Business-outcome tree ('So what?' chains)"},
+    {id:"w4_sel",label:"Workflow SELECTED + 3-sentence problem statement (business first — no 'AI' in it)"},
+    {id:"w4_metrics",label:"Baseline & target metrics set"},
+    {id:"w4_gonogo",label:"Go/no-go recommendation (1 page, as if to your manager)"}],
+  qtest:"Read the problem statement aloud. If 'AI' appears before the business problem — rewrite."},
+ {id:"w5", part:2, code:"WK 05 · E/N/T", title:"Engineer · Navigate · Track",
+  objective:"Redesign from a blank page, set autonomy & governance, define measurement.",
+  brief:["Every step: eliminate / combine / deterministic / AI / human / collaborative / parallel / exception-only.",
+    "Autonomy: 0 Inform · 1 Recommend · 2 Act-with-approval · 3 Bounded. Customer comms, pricing, contracts, CRM writes start ≤ 2.",
+    "Track at 4 layers: business, workflow, AI quality (groundedness first), risk (override rate)."],
+  tasks:[{id:"w5_redesign",label:"Future-state redesign with step dispositions"},
+    {id:"w5_auto",label:"Autonomy map — every decision assigned a level + evidence needed to raise it"},
+    {id:"w5_gov",label:"Governance owners named (business / technical / data / risk)"},
+    {id:"w5_track",label:"Measurement plan — baseline & target per layer"},
+    {id:"w5_brief",label:"DELIVERABLE — Agentic Workflow Implementation Brief (PRIMARY PHASE-ONE OUTPUT)"}],
+  qtest:"Could an engineer who never met you build the right system from the brief — and a risk-minded VP approve it without a meeting?"},
+ {id:"w6", part:3, code:"WK 06 · B", title:"Blueprint",
+  objective:"A technical design you can defend — before any code or prompts.",
+  brief:["Architecture + data-flow diagrams: every arrow into the model is an injection path; every arrow out is an action or leak.",
+    "Tool inventory with failure behavior; write-tools get approval + rollback fields.",
+    "Trust boundaries: external content is DATA, never instructions.",
+    "8+ failure modes: likelihood, impact, detection, response."],
+  tasks:[{id:"w6_arch",label:"Architecture diagram + system boundaries"},
+    {id:"w6_flow",label:"Data-flow diagram (PII & pricing marked)"},
+    {id:"w6_tools",label:"Tool inventory"},
+    {id:"w6_trust",label:"Trust boundaries + failure-mode analysis"},
+    {id:"w6_tdr",label:"Technology decision record"}],
+  qtest:"15 min with a technical reader: can they name what the agent can/can't do and where a bad outcome gets caught?"},
+ {id:"w7", part:3, code:"WK 07 · U", title:"Unite",
+  objective:"Connect the MINIMUM systems. Read-only first, safe data first.",
+  brief:["Priority: CRM → email → product info → pricing → docs → external research → output destination.",
+    "Manual CSV export is a valid Level-0 integration — don't let IT tickets block the prototype.",
+    "Never paste confidential data into unapproved tools. One credential, least privilege."],
+  tasks:[{id:"w7_reg",label:"Connection register (method, cadence, classification, approval)"},
+    {id:"w7_ret",label:"Working retrieval — one account's full context bundle assembled programmatically"},
+    {id:"w7_dep",label:"Dependency list (deferred integrations → feeds the 90-day roadmap)"}],
+  qtest:"Pick an account. Context bundle in under a minute with zero hand-copying?"},
+ {id:"w8", part:3, code:"WK 08 · I", title:"Implement",
+  objective:"The smallest end-to-end vertical slice — one thin path working for real.",
+  brief:["Trigger → collect evidence → one useful analysis → structured recommendation → human approval → full log.",
+    "Structured output everywhere. Citations mandatory. Abstention is a FEATURE.",
+    "Prompt & policy registry in version control from day one."],
+  tasks:[{id:"w8_slice",label:"Working vertical slice, runnable on demand"},
+    {id:"w8_reg",label:"Prompt & policy registry (versioned)"},
+    {id:"w8_runs",label:"3 recorded runs: typical / difficult / missing-data — with logs"},
+    {id:"w8_demo",label:"5-minute demo from a clean start"}],
+  qtest:"Run it on an account you know cold. Would you act on the recommendation? Where wrong, does the log show WHY?"},
+ {id:"w9", part:3, code:"WK 09 · L", title:"Learn — Evaluate",
+  objective:"Build the eval set BEFORE broad use; iterate until numbers justify a pilot.",
+  brief:["25–50 cases across 8 types — adversarial & policy-boundary matter most.",
+    "Expected outcome written BEFORE running each case.",
+    "8 criteria scored pass/fail. Re-run the FULL set each iteration — watch for regressions.",
+    "The improvement curve is executive evidence: '71% → 96% groundedness' beats any single score."],
+  tasks:[{id:"w9_set",label:"Evaluation dataset (coverage minimums met)"},
+    {id:"w9_rounds",label:"≥ 2 full scored evaluation rounds"},
+    {id:"w9_rep",label:"DELIVERABLE — Evaluation report with improvement curve"}],
+  qtest:"Adversarial + policy-boundary cases: 100% — or name the compensating control, precisely."},
+ {id:"w10", part:3, code:"WK 10 · D", title:"Deploy — Staged Ladder",
+  objective:"From working prototype to governed pilot. A ladder, not a switch.",
+  brief:["Offline eval → SHADOW MODE → sandbox → limited pilot → supervised → bounded production → rollout.",
+    "Shadow mode is the highest-value, lowest-risk stage. Do not skip it.",
+    "Portfolio check: all artifacts (VAULT module tracks them per project)."],
+  tasks:[{id:"w10_shadow",label:"Shadow-mode plan (or results) — agent output vs. what you actually did"},
+    {id:"w10_gov",label:"Governance charter complete & signed"},
+    {id:"w10_ops",label:"Operating procedure incl. KILL SWITCH (who, how, minutes, in-flight work)"},
+    {id:"w10_road",label:"90-day implementation roadmap"}],
+  qtest:"The kill-switch question answered in one paragraph? Ready for Part IV."},
+ {id:"w11", part:4, code:"WK 11", title:"Executive Package",
+  objective:"Convert the portfolio into a package that wins the pilot decision.",
+  brief:["12 sections: evidence (1–8) before asks (9–12).",
+    "Demo rules: never demo what you haven't run 3× that morning; show one graceful failure ON PURPOSE.",
+    "You're not asking permission to explore — you're presenting a working capability with a controlled path to scale."],
+  tasks:[{id:"w11_pkg",label:"Executive package — all 12 sections"},
+    {id:"w11_ask",label:"One-page ask: pilot decision + your proposed role"}],
+  qtest:"'What happens when it's wrong?' 'Why you?' 'What does it cost?' — all three answered INSIDE the package before they're asked."},
+ {id:"w12", part:4, code:"WK 12", title:"Trainer Plan & Capstone",
+  objective:"The curriculum that makes you the internal AI trainer — and a repeatable build method.",
+  brief:["3 tiers: Awareness (90 min) · Practitioner (half day) · Builder (4 weeks on a SECOND workflow).",
+    "The second project, run through this same platform, proves the methodology is repeatable — a capability, not a one-off.",
+    "From here: every new build = New Project in the sidebar → Inventory → Scoring → Vault. Learn once, build many."],
+  tasks:[{id:"w12_train",label:"Training plan with dates you could run"},
+    {id:"w12_reh",label:"Demo rehearsed against a skeptical listener"},
+    {id:"w12_exit",label:"EXIT: full package survives the three killer questions"}],
+  qtest:"Can you honestly say: 'I can identify opportunities, redesign workflows, build & evaluate prototypes, establish governance, train users, and lead a pilot from strategy through implementation'?"}
+];
+const PARTS = ["","I · FOUNDATIONS","II · A.G.E.N.T. STRATEGY","III · B.U.I.L.D. STUDIO","IV · ADOPTION"];
+
+const DIMS = [
+ {k:"bv", n:"Business value", grp:"v"}, {k:"fq", n:"Frequency", grp:"v"}, {k:"tb", n:"Time burden", grp:"v"},
+ {k:"rp", n:"Repeatability", grp:"f"}, {k:"jc", n:"Judgment complexity", grp:"f-"}, {k:"dr", n:"Data readiness", grp:"f"},
+ {k:"ir", n:"Integration readiness", grp:"f"}, {k:"es", n:"Error severity", grp:"r"}, {k:"gc", n:"Governance complexity", grp:"r"},
+ {k:"ar", n:"Adoption readiness", grp:"f"}];
+
+const SEED_INV = [
+ {name:"Quotation preparation", trigger:"Customer/integrator requests pricing for a project or part list", freq:"[confirm] several per week", people:"You, inside sales, pricing, supplier reps", systems:"[confirm] CRM, quoting/ERP, supplier portals, email, Excel", time:"[confirm] 1–4 h per quote", pain_note:"Incomplete specs; chasing internal pricing; re-keying", consequence:"Direct revenue & margin; slow quotes lose deals", decisions:"Product matching (judgment); margin (judgment+rules); clarify vs. assume", sensitive:"Customer pricing, cost/margin", ai:"Extract specs, flag missing info, propose matches, draft quote package for review"},
+ {name:"CCTV BOM building", trigger:"Project needs a camera system list (new build, upgrade, tender)", freq:"[confirm] weekly-ish", people:"You, integrator tech lead, brand reps", systems:"Brand selector tools, datasheets, Excel, email", time:"[confirm] 2–6 h per BOM", pain_note:"Verifying current vs. discontinued models; scope-shift rework", consequence:"Wins projects; wrong model = returns + credibility damage", decisions:"Model selection by environment (judgment); accessory completeness (rules)", sensitive:"Project details, competitive pricing", ai:"Draft BOMs by project type, validate model currency, accessory completeness, Excel output"},
+ {name:"Structured cabling BOM / takeoff", trigger:"Copper/fiber estimate needed, often from floor plans", freq:"[confirm] a few per month", people:"You, integrator, manufacturer SE", systems:"Plans (PDF), Excel, brand configurators, email", time:"[confirm] 3–8 h per takeoff", pain_note:"Manual counting from drawings; brand cross-referencing", consequence:"Large project revenue; estimate errors hit margin or lose bid", decisions:"Media/category selection, pathway sizing, cross-reference", sensitive:"Customer site drawings, pricing", ai:"Takeoff assistance from plans, draft BOMs, cross-reference tables"},
+ {name:"Tender / RFP analysis & bid decision", trigger:"Public tender or private RFP published (T&T, Jamaica, Guyana, Barbados, OECS…)", freq:"[confirm] several per month in season", people:"You, integrator partners, management", systems:"Tender portals, PDFs, Excel, email", time:"[confirm] 2–10 h per tender", pain_note:"Long documents; buried compliance clauses; short deadlines", consequence:"Largest territory deals; a missed clause disqualifies", decisions:"Bid/no-bid; compliance interpretation; which partner to back", sensitive:"Bid strategy, partner pricing", ai:"Summaries, compliance matrices, equipment extraction, risk flags, RFI drafts"},
+ {name:"Quote follow-up & pipeline hygiene", trigger:"Open quotes aging; weekly pipeline review; manager status requests", freq:"Continuous / weekly cycle", people:"You, customers, inside sales", systems:"[confirm] CRM, email, Excel side-lists", time:"[confirm] 3–5 h/week", pain_note:"Quotes go quiet; no systematic prioritization; CRM never current", consequence:"Conversion — deals die of silence; forecast accuracy", decisions:"Which quotes to chase first; when to escalate or discount", sensitive:"Customer comms, pricing", ai:"Rank by value × staleness × signals, draft follow-ups for approval, live status board"},
+ {name:"Account planning & territory priorities", trigger:"Week start; management review; island travel planning", freq:"Weekly + quarterly deep version", people:"You, sales manager", systems:"CRM, Excel/PowerPoint, purchase history", time:"[confirm] 2–4 h/week", pain_note:"Hand-assembling scattered info; whitespace invisible", consequence:"Territory coverage; growth on underworked accounts", decisions:"Where to spend time; develop vs. maintain", sensitive:"Purchase history, strategy", ai:"Auto-assemble briefs, surface whitespace, propose weekly priorities"},
+ {name:"Demand-generation research", trigger:"Ongoing scan: news, tenders, construction, customer expansions", freq:"[confirm] ad hoc — often skipped", people:"You", systems:"Web, tender portals, LinkedIn, news", time:"[confirm] 1–2 h/week when it happens", pain_note:"No systematic sweep; opportunities surface late via competitors", consequence:"New-project pipeline; early beats cheaper", decisions:"Which signals are real projects", sensitive:"Little — mostly public", ai:"Monitor sources, match to Wesco capabilities, weekly evidence-backed digest"},
+ {name:"Forecasting & management reporting", trigger:"Monthly/quarterly cadence; ad-hoc requests", freq:"Monthly + ad hoc", people:"[confirm] You, sales manager, finance", systems:"CRM, Excel, PowerPoint", time:"[confirm] 2–4 h per cycle", pain_note:"Manual assembly from CRM + memory; re-formatting per audience", consequence:"Forecast accuracy; management confidence; inventory positioning", decisions:"Deal probability and timing", sensitive:"Forecast, pipeline values", ai:"Draft narratives from CRM, flag stalled-but-committed risks, format per audience"},
+ {name:"Order status & expediting", trigger:"'Where is my order?'; backorder alerts", freq:"[confirm] several per week", people:"You, customer service, suppliers, customer", systems:"ERP views, email, supplier portals", time:"[confirm] 2–4 h/week", pain_note:"Chasing across systems; messenger of bad lead times", consequence:"Service level & trust; Caribbean logistics amplify delays", decisions:"Escalate, offer alternatives, or air-freight", sensitive:"Order details, commitments", ai:"Assemble status across sources, draft proactive updates, flag at-risk orders early"},
+ {name:"Product cross-referencing", trigger:"Competitor spec/BOM in play; brand unavailable or non-preferred", freq:"[confirm] weekly-ish", people:"You, brand SEs", systems:"Datasheets, cross-reference guides, Excel", time:"[confirm] 1–3 h per exercise", pain_note:"Line-by-line manual matching; near-equivalents with critical differences", consequence:"Converts competitor-spec'd projects to Wesco revenue", decisions:"True equivalence vs. 'close enough'", sensitive:"Competitor pricing when shared", ai:"Draft cross-reference tables with confidence flags + datasheet citations"},
+ {name:"Technical pre-sales Q&A", trigger:"Integrator asks: which model for X, compatibility, licensing, standards", freq:"[confirm] daily small questions", people:"You; brand SEs when escalated", systems:"[confirm] Datasheets, brand portals, WhatsApp/email", time:"[confirm] 30–60 min/day fragmented", pain_note:"Interruptions; same questions recur; answers live in your head", consequence:"Integrator loyalty — fastest reliable answer wins", decisions:"Mostly retrieval; judgment on edge cases", sensitive:"Minimal", ai:"Grounded product Q&A over datasheets with citations; you verify and send"},
+ {name:"Supplier / brand coordination", trigger:"Project registrations, special pricing, lead-time checks, program updates", freq:"[confirm] weekly", people:"You, brand reps, upstream distributors", systems:"Supplier portals, email", time:"[confirm] 2–3 h/week", pain_note:"Every brand its own portal; registrations expire silently", consequence:"Registration = margin protection; missed = lost deal economics", decisions:"Which projects to register where", sensitive:"Project & pricing details", ai:"Track registrations & expiries, draft submissions, per-brand status board"}
+];
+
+const VAULT_ITEMS = [
+ {id:"v_inv",n:"Confirmed Workflow Inventory",w:"GAUGE"},{id:"v_audit",n:"Audit Pack (7 artifacts)",w:"AUDIT"},
+ {id:"v_matrix",n:"Prioritization Matrix + Go/No-Go",w:"GAUGE"},{id:"v_brief",n:"Implementation Brief ★",w:"E/N/T"},
+ {id:"v_arch",n:"Architecture Specification",w:"BLUEPRINT"},{id:"v_conn",n:"Connection Register",w:"UNITE"},
+ {id:"v_proto",n:"Working Prototype ★",w:"IMPLEMENT"},{id:"v_preg",n:"Prompt & Policy Registry",w:"IMPLEMENT"},
+ {id:"v_eval",n:"Eval Dataset + Report ★",w:"LEARN"},{id:"v_risk",n:"Risk & Controls Register",w:"DEPLOY"},
+ {id:"v_ops",n:"Operating Procedure (kill switch)",w:"DEPLOY"},{id:"v_guide",n:"User Guide + Demo Script",w:"DEPLOY"},
+ {id:"v_road",n:"90-Day Roadmap",w:"DEPLOY"},{id:"v_exec",n:"Executive / Stakeholder Package ★",w:"ADOPT"},
+ {id:"v_train",n:"Training / Handover Plan",w:"ADOPT"}
+];
+
+/* ============================== STATE ============================== */
+const KEY="agentcc.v2";
+let S;
+function newProject(name, seed){ return {id:"p"+Date.now()+Math.floor(Math.random()*1e4), name,
+  inventory: seed? SEED_INV.map((w,i)=>({id:"wf"+(i+1), confirmed:false, pain:false, ...w})) : [],
+  scores:{}, vault:{}};}
+function defaults(){ const p=newProject("Wesco / Anixter — Sales Workflows", true); p.id="p1";
+  return {tasks:{}, projects:[p], active:"p1", log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
+function load(){ try{ const raw=localStorage.getItem(KEY); S = raw? Object.assign(defaults(), JSON.parse(raw)) : defaults(); }catch(e){ S=defaults(); }
+  if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01", false)];
+  if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
+function save(){ localStorage.setItem(KEY, JSON.stringify(S)); refreshHud(); }
+function P(){ return S.projects.find(p=>p.id===S.active); }
+
+/* ============================== PROJECT OPS ============================== */
+function switchProject(id){ S.active=id; openWf=null; scoringWf=null; save(); render(); speak("Project switched: "+P().name); }
+function addProject(){ const name=prompt("New project name (e.g. 'InterNavia — Proposal Engine', 'Personal — Finance Agent'):");
+  if(!name) return; const p=newProject(name.trim(), false); S.projects.push(p); S.active=p.id; openWf=null; scoringWf=null; save(); render(); }
+function renameProject(){ const name=prompt("Rename project:", P().name); if(!name) return; P().name=name.trim(); save(); render(); }
+function deleteProject(){ if(S.projects.length<=1){ alert("At least one project must remain."); return; }
+  if(confirm(`Delete project "${P().name}" and ALL its data (inventory, scores, vault)?`)){
+    S.projects=S.projects.filter(p=>p.id!==S.active); S.active=S.projects[0].id; openWf=null; scoringWf=null; save(); render(); } }
+function projPct(p){ const vs=Object.values(p.vault); const done=VAULT_ITEMS.filter(it=>(p.vault[it.id]||{}).status==="done").length;
+  return Math.round(100*done/VAULT_ITEMS.length); }
+
+/* ============================== HELPERS ============================== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function allTasks(){ return WEEKS.flatMap(w=>w.tasks); }
+function weekPct(w){ const d=w.tasks.filter(t=>S.tasks[t.id]).length; return Math.round(100*d/w.tasks.length); }
+function overallPct(){ const t=allTasks(); const d=t.filter(x=>S.tasks[x.id]).length; return Math.round(100*d/t.length); }
+function partPct(p){ const t=WEEKS.filter(w=>w.part===p).flatMap(w=>w.tasks); const d=t.filter(x=>S.tasks[x.id]).length; return Math.round(100*d/t.length); }
+function currentWeek(){ return WEEKS.find(w=>w.tasks.some(t=>!S.tasks[t.id])) || WEEKS[WEEKS.length-1]; }
+function nextTask(){ for(const w of WEEKS) for(const t of w.tasks) if(!S.tasks[t.id]) return {week:w, task:t}; return null; }
+function scoreOf(proj, wf){
+  const sc=proj.scores[wf.id]; if(!sc) return null;
+  const g=k=>sc[k]||0;
+  if(DIMS.every(d=>!g(d.k))) return null;
+  const value=g("bv")+g("fq")+g("tb");
+  const feas=Math.max(0, g("rp")+g("dr")+g("ir")+g("ar")-g("jc"));
+  const risk=g("es")+g("gc");
+  return {value, feas, risk, prio:value*feas};
+}
+function speak(txt){ if(!S.settings.voice || !window.speechSynthesis) return;
+  const u=new SpeechSynthesisUtterance(txt); u.rate=1.02; u.pitch=.9; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+
+/* ============================== HUD ============================== */
+function refreshHud(){
+  $("#hud-pct").textContent=overallPct()+"%";
+  $("#hud-week").textContent=currentWeek().code;
+  $("#hud-proj").textContent="P"+String(S.projects.indexOf(P())+1).padStart(2,"0");
+  const sel=$("#projsel");
+  sel.innerHTML=S.projects.map((p,i)=>`<option value="${p.id}" ${p.id===S.active?"selected":""}>P${String(i+1).padStart(2,"0")} · ${esc(p.name)}</option>`).join("");
+}
+function tickClock(){
+  const d=new Date();
+  $("#hud-clock").textContent=d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  $("#hud-date").textContent=d.toLocaleDateString([], {weekday:"short", day:"numeric", month:"short"});
+}
+
+/* ============================== RENDER: OVERVIEW ============================== */
+function ring(pct){
+  const r=62, c=2*Math.PI*r, off=c*(1-pct/100);
+  return `<svg class="bigring" viewBox="0 0 150 150" role="img" aria-label="Program ${pct}% complete">
+    <circle cx="75" cy="75" r="${r}" fill="none" stroke="#0d2233" stroke-width="9"/>
+    <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--cyan)" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 75 75)"
+      style="filter:drop-shadow(0 0 6px rgba(55,210,242,.7))"/>
+    <circle cx="75" cy="75" r="46" fill="none" stroke="#0d2233" stroke-width="1"/>
+    <text x="75" y="72" text-anchor="middle" fill="var(--ink)" font-size="26" font-weight="600" font-family="ui-monospace,monospace">${pct}%</text>
+    <text x="75" y="92" text-anchor="middle" fill="var(--muted)" font-size="8" letter-spacing="2">COMPLETE</text>
+  </svg>`;
+}
+function rOverview(){
+  const hr=new Date().getHours();
+  const greet= hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
+  const nt=nextTask();
+  const proj=P(), inv=proj.inventory, conf=inv.filter(w=>w.confirmed).length;
+  const ranked=inv.map(w=>({w, s:scoreOf(proj,w)})).filter(x=>x.s).sort((a,b)=>b.s.prio-a.s.prio);
+  const top=ranked[0];
+  speak(`${greet}, ${S.settings.name}. Program at ${overallPct()} percent. Active project: ${proj.name}.`);
+  return `
+  <div class="panel"><h2>Learning Track<span class="sub">// ${greet}, ${esc(S.settings.name)} — learn once, build many</span></h2>
+    <div class="ringwrap">
+      ${ring(overallPct())}
+      <div style="flex:1;min-width:250px">
+        ${[1,2,3,4].map(p=>`<div class="phasebar">
+          <div class="lbl"><span>PART ${PARTS[p]}</span><span class="mono">${partPct(p)}%</span></div>
+          <div class="track"><div class="fill" style="width:${partPct(p)}%"></div></div></div>`).join("")}
+      </div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="panel"><h2>Current Objective</h2>
+      ${nt? `<div class="objective"><span class="tag">▸ ${nt.week.code} — ${esc(nt.week.title)}</span>${esc(nt.task.label)}</div>
+      <div class="togglerow"><button class="btn" onclick="go('program','${nt.week.id}')">Open Mission</button></div>`
+      : `<div class="objective"><span class="tag" style="color:var(--good)">ALL LEARNING OBJECTIVES COMPLETE</span>The program is a build engine now — spin up projects.</div>`}
+    </div>
+    <div class="panel"><h2>Active Project — ${esc(proj.name)}</h2>
+      <div class="statrow">
+        <div class="stat"><b class="mono">${inv.length}</b><span>Workflows</span></div>
+        <div class="stat"><b class="mono">${conf}/${inv.length||0}</b><span>Confirmed</span></div>
+        <div class="stat"><b class="mono">${ranked.length}</b><span>Scored</span></div>
+        <div class="stat"><b class="mono">${VAULT_ITEMS.filter(it=>(proj.vault[it.id]||{}).status==="done").length}/${VAULT_ITEMS.length}</b><span>Artifacts</span></div>
+      </div>
+      ${top? `<p style="margin-top:14px;font-size:12.5px;color:var(--ink2)">PRIME CANDIDATE: <b style="color:var(--cyan)">${esc(top.w.name)}</b> — priority index <span class="mono">${top.s.prio}</span></p>`
+           : `<p style="margin-top:14px;font-size:12.5px;color:var(--muted)">No candidates scored yet — SCORING computes this project's priority matrix.</p>`}
+    </div>
+  </div>
+  <div class="panel"><h2>Projects<span class="sub">// every build runs the same method: Inventory → Scoring → Vault</span></h2>
+    ${S.projects.map((p,i)=>`<div class="projcard ${p.id===S.active?"on":""}" onclick="switchProject('${p.id}')">
+      <span class="idx mono" style="color:var(--cyan)">P${String(i+1).padStart(2,"0")}</span>
+      <div class="pn"><b>${esc(p.name)}</b><small>${p.inventory.length} workflows · ${p.inventory.filter(w=>w.confirmed).length} confirmed</small></div>
+      <div class="minitrack"><div class="lbl" style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted)"><span>PORTFOLIO</span><span class="mono">${projPct(p)}%</span></div>
+        <div class="track"><div class="fill" style="width:${projPct(p)}%"></div></div></div>
+    </div>`).join("")}
+    <div class="togglerow"><button class="btn" onclick="addProject()">+ New project</button></div>
+  </div>
+  <div class="panel"><h2>Standing Orders<span class="sub">// apply to every project</span></h2>
+    <ul class="brief">
+      <li>Use the <b>least autonomous system</b> capable of producing the required business outcome.</li>
+      <li>Outbound communications, pricing/contract commitments, consequential system writes: <b>human approval required</b> until evaluation evidence says otherwise.</li>
+      <li>No unredacted customer data or confidential pricing leaves approved systems.</li>
+      <li>Every claim an agent makes must be <b>cited to a source</b>; abstention is a feature.</li>
+    </ul>
+  </div>`;
+}
+
+/* ============================== RENDER: PROGRAM ============================== */
+function rProgram(){
+  const cw=currentWeek();
+  return `<div class="panel"><h2>Mission Timeline<span class="sub">// 12 weeks · 4 phases · complete once, reuse forever</span></h2>
+  ${[1,2,3,4].map(p=>`
+    <p style="margin:14px 0 8px;color:var(--muted);font-size:10px;letter-spacing:.24em">PART ${PARTS[p]}</p>
+    ${WEEKS.filter(w=>w.part===p).map(w=>{
+      const pct=weekPct(w), open=S.openWeek===w.id;
+      return `<div class="week ${pct===100?"done":""} ${w.id===cw.id?"active":""} ${open?"open":""}" id="wk-${w.id}">
+        <header onclick="toggleWeek('${w.id}')">
+          <div class="node"></div>
+          <div class="wtitle"><small>${w.code}</small><b>${esc(w.title)}</b></div>
+          <div class="pct mono">${pct}%</div>
+        </header>
+        <div class="body">
+          <p style="color:var(--cyan);font-size:12.5px">◈ ${esc(w.objective)}</p>
+          <ul class="brief">${w.brief.map(b=>`<li>${b}</li>`).join("")}</ul>
+          ${w.tasks.map(t=>`<label class="task ${S.tasks[t.id]?"checked":""}">
+            <input type="checkbox" ${S.tasks[t.id]?"checked":""} onchange="toggleTask('${t.id}')"> <span>${esc(t.label)}</span></label>`).join("")}
+          <div class="qtest"><b>QUALITY TEST — </b>${esc(w.qtest)}</div>
+        </div>
+      </div>`;}).join("")}`).join("")}
+  <p style="color:var(--muted);font-size:11px;margin-top:12px">Full week briefings live in the repo: <span class="mono">agentic-ai-program/part-*/*.md</span>. The curriculum's Wesco examples generalize — Weeks 3–10 are the method you rerun on every future project.</p>
+  </div>`;
+}
+function toggleWeek(id){ S.openWeek = S.openWeek===id? null : id; save(); render(); }
+function toggleTask(id){ S.tasks[id]=!S.tasks[id]; save(); render(); }
+
+/* ============================== RENDER: INVENTORY ============================== */
+const FIELDS=[["trigger","Trigger"],["freq","Frequency"],["people","People involved"],["systems","Systems involved"],
+  ["time","Time required"],["pain_note","Main frustration"],["consequence","Business consequence"],
+  ["decisions","Decisions involved"],["sensitive","Sensitive information"],["ai","What AI could do"]];
+let openWf=null;
+function rInventory(){
+  const proj=P();
+  return `<div class="panel"><h2>Workflow Inventory<span class="sub">// ${esc(proj.name)}</span></h2>
+  <p style="color:var(--ink2);font-size:12.5px;margin-bottom:12px">${proj.inventory.length? `Entries marked <span class="mono" style="color:var(--warn)">[confirm]</span> are drafted guesses — replace with real numbers. Toggle <b>CONFIRMED</b> when true; mark up to 3 <b>TOP PAIN</b>s.` : `Empty inventory — start this project's A.G.E.N.T. cycle by capturing its recurring workflows (or opportunities), exactly as you learned in Assignment 0.`}</p>
+  ${proj.inventory.map((w,i)=>`
+    <div class="wfcard ${openWf===w.id?"open":""}">
+      <header onclick="toggleWf('${w.id}')">
+        <span class="idx mono">${String(i+1).padStart(2,"0")}</span>
+        <span class="nm">${esc(w.name)||"(unnamed workflow)"}</span>
+        ${w.pain?'<span class="chip pain">TOP PAIN</span>':""}
+        <span class="chip ${w.confirmed?"ok":""}">${w.confirmed?"CONFIRMED":"DRAFT"}</span>
+      </header>
+      <div class="body">
+        <div class="field"><label>Name</label><input type="text" value="${esc(w.name)}" onchange="setWf('${w.id}','name',this.value)"></div>
+        <div class="grid g2">
+          ${FIELDS.map(([k,lab])=>`<div class="field"><label>${lab}</label><textarea onchange="setWf('${w.id}','${k}',this.value)">${esc(w[k])}</textarea></div>`).join("")}
+        </div>
+        <div class="togglerow">
+          <button class="btn small" onclick="flipWf('${w.id}','confirmed')">${w.confirmed?"✓ Confirmed":"Mark confirmed"}</button>
+          <button class="btn small" onclick="flipWf('${w.id}','pain')">${w.pain?"★ Top pain":"Mark top pain"}</button>
+          <button class="btn small danger" onclick="delWf('${w.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`).join("")}
+  <div class="togglerow"><button class="btn" onclick="addWf()">+ Add workflow</button></div>
+  </div>`;
+}
+function toggleWf(id){ openWf = openWf===id? null : id; render(); }
+function setWf(id,k,v){ const w=P().inventory.find(x=>x.id===id); if(w){ w[k]=v; save(); } }
+function flipWf(id,k){ const w=P().inventory.find(x=>x.id===id); if(!w) return;
+  if(k==="pain" && !w.pain && P().inventory.filter(x=>x.pain).length>=3){ alert("Max 3 top pains — unmark one first."); return; }
+  w[k]=!w[k]; save(); render(); }
+function delWf(id){ const w=P().inventory.find(x=>x.id===id);
+  if(confirm(`Delete "${w.name}"? Its scores go too.`)){ P().inventory=P().inventory.filter(x=>x.id!==id); delete P().scores[id]; save(); render(); } }
+function addWf(){ const id="wf"+Date.now(); P().inventory.push({id, name:"", confirmed:false, pain:false,
+  trigger:"",freq:"",people:"",systems:"",time:"",pain_note:"",consequence:"",decisions:"",sensitive:"",ai:""});
+  openWf=id; save(); render(); }
+
+/* ============================== RENDER: SCORING ============================== */
+let scoringWf=null;
+function rScoring(){
+  const proj=P();
+  const wf = proj.inventory.find(w=>w.id===scoringWf) || proj.inventory[0];
+  if(wf) scoringWf=wf.id;
+  const sc = wf ? (proj.scores[wf.id] = proj.scores[wf.id]||{}) : {};
+  const s = wf ? scoreOf(proj, wf) : null;
+  const ranked=proj.inventory.map(w=>({w, s:scoreOf(proj,w)})).filter(x=>x.s).sort((a,b)=>b.s.prio-a.s.prio);
+  return `
+  ${ranked.length? `<div class="prime"><span class="tag">◈ PRIME CANDIDATE — ${esc(proj.name)}</span>
+    <p style="font-size:16px;margin:4px 0"><b>${esc(ranked[0].w.name)}</b></p>
+    <p style="color:var(--ink2);font-size:12.5px">Highest Value × Feasibility (${ranked[0].s.prio}). Risk ${ranked[0].s.risk}/10 ${ranked[0].s.risk>=7?"— HIGH: control with autonomy levels before committing":"— controllable"}. Selection rule: weight time-to-measurable-value heavily; each project's first build proves the method in that domain.</p></div>`:""}
+  <div class="panel"><h2>Score a Workflow<span class="sub">// 1 = low · 5 = high · 0 = unscored</span></h2>
+    ${wf? `<div class="field"><label>Candidate</label>
+      <select onchange="scoringWf=this.value;render()">
+        ${proj.inventory.map(w=>`<option value="${w.id}" ${w.id===scoringWf?"selected":""}>${esc(w.name)||"(unnamed)"}</option>`).join("")}
+      </select></div>
+    ${DIMS.map(d=>`<div class="dimrow">
+        <label>${d.n} <span style="color:var(--muted)">${d.grp==="v"?"(value)":d.grp==="r"?"(risk)":d.grp==="f-"?"(feas −)":"(feas +)"}</span></label>
+        <input type="range" min="0" max="5" step="1" value="${sc[d.k]||0}" oninput="setScore('${wf.id}','${d.k}',this.value)">
+        <span class="val mono" id="sv-${d.k}">${sc[d.k]||0}</span>
+      </div>`).join("")}
+    ${s? `<div class="scoreout">
+      <div class="so"><b class="mono" style="color:var(--s-value)">${s.value}<small style="color:var(--muted)">/15</small></b><span>Value</span></div>
+      <div class="so"><b class="mono" style="color:var(--s-feas)">${s.feas}<small style="color:var(--muted)">/19</small></b><span>Feasibility</span></div>
+      <div class="so"><b class="mono" style="color:var(--s-risk)">${s.risk}<small style="color:var(--muted)">/10</small></b><span>Risk</span></div>
+      <div class="so"><b class="mono" style="color:var(--cyan)">${s.prio}</b><span>Priority index</span></div>
+    </div>`:`<p style="color:var(--muted);font-size:12px;margin-top:8px">Move any slider to begin scoring this candidate.</p>`}`
+    : `<p style="color:var(--muted)">This project's inventory is empty — add workflows in the INVENTORY module first.</p>`}
+  </div>
+  <div class="panel"><h2>Priority Matrix<span class="sub">// ranked by Value × Feasibility</span></h2>
+    ${ranked.length? `
+    <div class="legend">
+      <span><i style="background:var(--s-value)"></i>Value /15</span>
+      <span><i style="background:var(--s-feas)"></i>Feasibility /19</span>
+      <span><i style="background:var(--s-risk)"></i>Risk /10 (lower = safer)</span>
+    </div>
+    <div class="rank">${ranked.map((x,i)=>`
+      <div class="rankrow">
+        <div class="rlbl"><b>${i+1}. ${esc(x.w.name)}</b><span class="prio mono">P·${x.s.prio}${x.s.risk>=7?' <span style="color:var(--warn)">⚠ RISK</span>':""}</span></div>
+        <div class="bar"><span>Value</span><div class="bt"><div class="bf" style="width:${100*x.s.value/15}%;background:var(--s-value)"></div></div><span class="bn mono">${x.s.value}</span></div>
+        <div class="bar"><span>Feasib.</span><div class="bt"><div class="bf" style="width:${100*x.s.feas/19}%;background:var(--s-feas)"></div></div><span class="bn mono">${x.s.feas}</span></div>
+        <div class="bar"><span>Risk</span><div class="bt"><div class="bf" style="width:${100*x.s.risk/10}%;background:var(--s-risk)"></div></div><span class="bn mono">${x.s.risk}</span></div>
+      </div>`).join("")}</div>`
+    : `<p style="color:var(--muted)">Nothing scored yet. Score candidates above — the matrix builds itself.</p>`}
+  </div>`;
+}
+function setScore(wfId,k,v){ const proj=P(); (proj.scores[wfId]=proj.scores[wfId]||{})[k]=+v; save();
+  const el=document.getElementById("sv-"+k); if(el) el.textContent=v; render(); }
+
+/* ============================== RENDER: VAULT ============================== */
+function rVault(){
+  const proj=P();
+  return `<div class="panel"><h2>Deliverables Vault<span class="sub">// ${esc(proj.name)} — the portfolio · ★ = flagship</span></h2>
+  ${VAULT_ITEMS.map(it=>{ const v=proj.vault[it.id]||{status:"none",notes:""};
+    return `<div class="vrow">
+      <div class="vn ${v.status==="done"?"st-done":v.status==="prog"?"st-prog":"st-none"}">${esc(it.n)}<small>${it.w}</small></div>
+      <select onchange="setVault('${it.id}','status',this.value)">
+        <option value="none" ${v.status==="none"?"selected":""}>Not started</option>
+        <option value="prog" ${v.status==="prog"?"selected":""}>In progress</option>
+        <option value="done" ${v.status==="done"?"selected":""}>Complete</option>
+      </select>
+      <input placeholder="location / note" value="${esc(v.notes)}" onchange="setVault('${it.id}','notes',this.value)">
+    </div>`;}).join("")}
+  <p style="color:var(--muted);font-size:11px;margin-top:10px">Every project produces this same portfolio — that's what makes the method repeatable. Keep artifacts in <span class="mono">agentic-ai-program/work/</span> (redacted) or an approved location; record where in the note field.</p>
+  </div>`;
+}
+function setVault(id,k,v){ const proj=P(); (proj.vault[id]=proj.vault[id]||{status:"none",notes:""})[k]=v; save(); render(); }
+
+/* ============================== RENDER: LOG & DATA ============================== */
+function rLog(){
+  return `
+  <div class="panel"><h2>Mission Log<span class="sub">// entries tag the active project</span></h2>
+    <textarea id="login" placeholder="Log a decision, an insight, a blocker…"></textarea>
+    <div class="togglerow"><button class="btn" onclick="addLog()">Commit Entry</button></div>
+    ${S.log.slice().reverse().map(e=>`<div class="logentry"><time class="mono">${esc(e.t)}</time>${e.p?`<span class="ptag">[${esc(e.p)}] </span>`:""}${esc(e.txt)}</div>`).join("")}
+  </div>
+  <div class="panel"><h2>Settings</h2>
+    <div class="field" style="max-width:280px"><label>Operator name</label>
+      <input type="text" value="${esc(S.settings.name)}" onchange="S.settings.name=this.value;save();render()"></div>
+    <div class="togglerow">
+      <button class="btn" onclick="S.settings.voice=!S.settings.voice;save();render();speak('Voice interface '+(S.settings.voice?'online':'offline'))">
+        Voice: ${S.settings.voice?"ONLINE":"OFFLINE"}</button>
+    </div>
+  </div>
+  <div class="panel"><h2>Data<span class="sub">// everything lives in this browser only</span></h2>
+    <div class="togglerow">
+      <button class="btn" onclick="exportData()">⭳ Export JSON backup</button>
+      <button class="btn" onclick="document.getElementById('importfile').click()">⭱ Import backup</button>
+      <button class="btn danger" onclick="resetData()">Reset all data</button>
+      <input type="file" id="importfile" accept=".json" style="display:none" onchange="importData(this)">
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-top:10px">The backup contains ALL projects. Export before clearing browser data or switching machines — treat it with the same care as any work file.</p>
+  </div>`;
+}
+function addLog(){ const v=$("#login").value.trim(); if(!v) return;
+  S.log.push({t:new Date().toLocaleString(), p:P().name, txt:v}); save(); render(); }
+function exportData(){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:"application/json"}));
+  a.download="agent-command-center-backup.json"; a.click();
+}
+function importData(inp){ const f=inp.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ try{ S=Object.assign(defaults(), JSON.parse(r.result)); load2(); save(); render(); alert("Backup restored."); }
+  catch(e){ alert("Not a valid backup file."); } }; r.readAsText(f); }
+function load2(){ if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01", false)];
+  if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
+function resetData(){ if(confirm("Wipe ALL local data — every project, checklist, score, and log entry? Export a backup first?")){
+  localStorage.removeItem(KEY); load(); save(); render(); } }
+
+/* ============================== ROUTER ============================== */
+const MODULES={overview:rOverview, program:rProgram, inventory:rInventory, scoring:rScoring, vault:rVault, log:rLog};
+function go(m, weekId){ S.module=m; if(weekId) S.openWeek=weekId; save(); render();
+  if(weekId){ requestAnimationFrame(()=>{ const el=document.getElementById("wk-"+weekId); if(el) el.scrollIntoView({behavior:"smooth"}); }); } }
+function render(){
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("on", b.dataset.m===S.module));
+  $("#view").innerHTML=(MODULES[S.module]||rOverview)();
+  refreshHud();
+}
+document.querySelectorAll(".navbtn").forEach(b=>b.addEventListener("click",()=>go(b.dataset.m)));
+
+load();
+{ const h=location.hash.replace("#",""); if(MODULES[h]) S.module=h; }
+window.addEventListener("hashchange", ()=>{ const h=location.hash.replace("#",""); if(MODULES[h]) go(h); });
+render(); tickClock(); setInterval(tickClock, 30000);
+</script>
+</body>
+</html>

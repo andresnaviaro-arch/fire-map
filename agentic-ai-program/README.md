@@ -46,6 +46,17 @@ documented, so we built one we can fully stand behind):
 - **L — Learn**: build the evaluation set *before* broad use; measure correctness, grounding, abstention, escalation, cost.
 - **D — Deploy**: staged progression — offline eval → shadow → sandbox → pilot → supervised → bounded production → rollout.
 
+## The Command Center
+
+`command-center/index.html` is an interactive HUD for running this program —
+and for reusing the methodology on future projects ("learn once, build many").
+It tracks the 12-week timeline, hosts a per-project workflow inventory, computes
+the Week-4 scoring matrix live, and tracks each project's deliverables portfolio.
+Open it via GitHub Pages at `/<repo>/agentic-ai-program/command-center/` or
+locally with `python3 -m http.server`. All data stays in your browser
+(localStorage) — nothing you type is committed or uploaded; use its Export
+button for backups.
+
 ## How to work through it
 
 1. Start with `PROGRESS.md` — it is the master checklist.

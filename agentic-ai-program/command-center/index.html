@@ -396,16 +396,36 @@ const VAULT_ITEMS = [
  {id:"v_train",n:"Training / Handover Plan",w:"ADOPT"}
 ];
 
+const SEED_INAV = [
+ {name:"Commercial proposal generation (EN-ES)", trigger:"Qualified customer requests an offer for a machine, accessories, or consumables", freq:"[confirm] several per month", people:"You; factory/OEM contact for specs & pricing", systems:"[confirm] Email, WhatsApp, Word/PDF templates, spreadsheets", time:"[confirm] 2–5 h per proposal", pain_note:"Re-assembling specs, photos, terms and bilingual text per deal; version chaos", consequence:"Deal conversion; a sloppy proposal loses trust at high ticket sizes", decisions:"Configuration, pricing/margin, Incoterms, payment terms, validity", sensitive:"Costs, margins, customer data, supplier pricing", ai:"Generate bilingual proposals from structured inputs by business type (new / used / accessories–consumables) — the generador-propuestas skill is v1 of this agent"},
+ {name:"Lead intake & qualification", trigger:"Inquiry arrives via web, WhatsApp, referral, or marketplace listing", freq:"[confirm] weekly", people:"You", systems:"[confirm] WhatsApp, email, spreadsheet/CRM-lite", time:"[confirm] 1–3 h/week", pain_note:"Separating real buyers from tire-kickers; slow first response when traveling", consequence:"High-ticket pipeline; speed of first response often decides who wins", decisions:"Is it real? Budget? Timeline? Which machine fits?", sensitive:"Customer contact data", ai:"Draft qualification questions, score leads, propose fit from the machine portfolio, draft first responses for approval"},
+ {name:"Used machine sourcing & evaluation", trigger:"A customer wants a machine type; or a good unit appears on the market", freq:"[confirm] ongoing scan + per-deal", people:"You, sellers/brokers, technical contacts", systems:"Marketplaces, broker emails, photos/videos, spreadsheets", time:"[confirm] 2–6 h per candidate machine", pain_note:"Scattered listings; assessing condition remotely; price benchmarking", consequence:"Buy-side margin is made or lost here; a bad unit becomes a warranty nightmare", decisions:"Condition judgment, fair price, refurbishment needs, buy/pass", sensitive:"Acquisition costs, negotiating positions", ai:"Monitor listings, normalize specs, build comparison tables, benchmark asking prices, draft inspection checklists"},
+ {name:"Machine listing & marketing content", trigger:"New unit (new or used) ready to offer", freq:"[confirm] per acquisition", people:"You", systems:"Photos/videos, listing sites, LinkedIn, website", time:"[confirm] 2–4 h per listing", pain_note:"Rewriting the same specs for each channel and language", consequence:"Inbound lead flow; visibility drives the pipeline", decisions:"Positioning, price to publish, which channels", sensitive:"Little", ai:"Generate bilingual listings, spec sheets, and social posts from one structured machine record"},
+ {name:"Spare parts & consumables quoting", trigger:"Existing customer requests parts, accessories, or consumables", freq:"[confirm] weekly-ish", people:"You, OEM/supplier contacts", systems:"Email, supplier catalogs, spreadsheets", time:"[confirm] 1–2 h per request", pain_note:"Part identification from photos or vague descriptions; supplier lead times", consequence:"Recurring revenue and account stickiness between machine sales", decisions:"Part match, markup, stock vs. order", sensitive:"Supplier costs", ai:"Identify parts from descriptions/photos against catalogs, draft RFQs to suppliers, prepare customer quotes"},
+ {name:"Logistics & import coordination", trigger:"Deal closed — machine must move (often cross-border)", freq:"[confirm] per deal", people:"You, freight forwarders, customs brokers, customer", systems:"Email, forwarder quotes, customs docs", time:"[confirm] 4–10 h per shipment", pain_note:"Quote chasing, document accuracy, Incoterm confusion, delay management", consequence:"Errors cost real money (demurrage, re-inspection) and customer goodwill", decisions:"Forwarder selection, Incoterms, insurance, packaging requirements", sensitive:"Commercial invoices, customer tax data", ai:"Draft document packs, compare forwarder quotes, track milestones, draft proactive status updates"},
+ {name:"Supplier / OEM communication", trigger:"Specs, pricing, availability, warranty, or technical questions per deal", freq:"[confirm] weekly", people:"You, factory sales & technical staff", systems:"Email, WhatsApp, catalogs", time:"[confirm] 2–4 h/week", pain_note:"Time zones and language; slow answers block customer responses", consequence:"Response speed to the end customer; factory relationship quality", decisions:"What to ask, what to commit to before factory confirmation", sensitive:"Distributor terms, transfer pricing", ai:"Draft technical/commercial queries, translate, track open questions per deal, summarize long threads"},
+ {name:"After-sales & installation coordination", trigger:"Machine delivered — installation, training, warranty issues", freq:"[confirm] per deal + incidents", people:"You, technicians, factory support, customer", systems:"WhatsApp, email, service reports", time:"[confirm] varies; spikes on incidents", pain_note:"Being the 24/7 middleman for technical issues", consequence:"Reputation and referrals in a small market; warranty cost exposure", decisions:"Escalate to factory vs. local fix; goodwill concessions", sensitive:"Customer operations data", ai:"Triage issues against manuals/known-issues, draft factory escalations, maintain per-machine service history"},
+ {name:"Pipeline & cash-flow tracking", trigger:"Weekly review; deposits, balances, and supplier payments per deal", freq:"Weekly", people:"You (+ accountant)", systems:"[confirm] Spreadsheets, bank, invoices", time:"[confirm] 1–3 h/week", pain_note:"Deals span months; deposits, LC/transfer milestones and supplier payments easy to lose track of", consequence:"Cash-flow risk on high-ticket deals; forecast clarity", decisions:"Payment scheduling, currency timing, which deals to push", sensitive:"All financials", ai:"Maintain a deal board with payment milestones, flag upcoming obligations, draft payment reminders"}
+];
+
 /* ============================== STATE ============================== */
 const KEY="agentcc.v2";
 let S;
-function newProject(name, seed){ return {id:"p"+Date.now()+Math.floor(Math.random()*1e4), name,
-  inventory: seed? SEED_INV.map((w,i)=>({id:"wf"+(i+1), confirmed:false, pain:false, ...w})) : [],
+function newProject(name, seedArr){ return {id:"p"+Date.now()+Math.floor(Math.random()*1e4), name,
+  inventory: (seedArr||[]).map((w,i)=>({id:"wf"+(i+1), confirmed:false, pain:false, ...w})),
   scores:{}, vault:{}};}
-function defaults(){ const p=newProject("Wesco / Anixter — Sales Workflows", true); p.id="p1";
-  return {tasks:{}, projects:[p], active:"p1", log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
+function defaults(){
+  const p1=newProject("Wesco / Anixter — Sales Workflows", SEED_INV); p1.id="p1";
+  const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
+  return {tasks:{}, projects:[p1,p2], active:"p1", seeded:{p1:true,p2:true}, log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
 function load(){ try{ const raw=localStorage.getItem(KEY); S = raw? Object.assign(defaults(), JSON.parse(raw)) : defaults(); }catch(e){ S=defaults(); }
-  if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01", false)];
+  if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01")];
+  // migrate older saves: inject seeded projects they've never had (deleting one later is respected via the seeded flags)
+  S.seeded = S.seeded || {p1:true};
+  if(!S.seeded.p2 && !S.projects.find(p=>p.id==="p2")){
+    const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
+    S.projects.push(p2); S.seeded.p2=true;
+  }
   if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); refreshHud(); }
 function P(){ return S.projects.find(p=>p.id===S.active); }

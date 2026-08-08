@@ -418,14 +418,18 @@ function defaults(){
   const p1=newProject("Wesco / Anixter — Sales Workflows", SEED_INV); p1.id="p1";
   const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
   return {tasks:{}, projects:[p1,p2], active:"p1", seeded:{p1:true,p2:true}, log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
-function load(){ try{ const raw=localStorage.getItem(KEY); S = raw? Object.assign(defaults(), JSON.parse(raw)) : defaults(); }catch(e){ S=defaults(); }
+function load(){
+  let raw=null; try{ raw=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
+  S = raw? Object.assign(defaults(), raw) : defaults();
   if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01")];
-  // migrate older saves: inject seeded projects they've never had (deleting one later is respected via the seeded flags)
-  S.seeded = S.seeded || {p1:true};
+  // migrate older saves: seeded flags must come from the SAVE, not from defaults —
+  // otherwise the merge marks p2 as already-seeded and the injection never fires
+  S.seeded = (raw && raw.seeded) ? raw.seeded : {p1:true};
   if(!S.seeded.p2 && !S.projects.find(p=>p.id==="p2")){
     const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
-    S.projects.push(p2); S.seeded.p2=true;
+    S.projects.push(p2);
   }
+  S.seeded.p2=true; // handled either way; a later user delete of p2 stays deleted
   if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); refreshHud(); }
 function P(){ return S.projects.find(p=>p.id===S.active); }

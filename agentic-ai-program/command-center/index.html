@@ -225,7 +225,7 @@
   </nav>
   <main id="view"></main>
 </div>
-<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span></footer>
+<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span> · <span class="mono" style="color:var(--cyan)">BUILD 5</span></footer>
 
 <script>
 "use strict";
@@ -410,26 +410,29 @@ const SEED_INAV = [
 
 /* ============================== STATE ============================== */
 const KEY="agentcc.v2";
+const SEEDED=[
+ {id:"p1", name:"Wesco / Anixter — Sales Workflows", seed:()=>SEED_INV},
+ {id:"p2", name:"InterNavia / Interflex — Agent Projects", seed:()=>SEED_INAV},
+ {id:"p3", name:"Anaeli", seed:()=>[]}
+];
 let S;
 function newProject(name, seedArr){ return {id:"p"+Date.now()+Math.floor(Math.random()*1e4), name,
   inventory: (seedArr||[]).map((w,i)=>({id:"wf"+(i+1), confirmed:false, pain:false, ...w})),
   scores:{}, vault:{}};}
+function seededProject(def){ const p=newProject(def.name, def.seed()); p.id=def.id; return p; }
 function defaults(){
-  const p1=newProject("Wesco / Anixter — Sales Workflows", SEED_INV); p1.id="p1";
-  const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
-  return {tasks:{}, projects:[p1,p2], active:"p1", seeded:{p1:true,p2:true}, log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
+  return {tasks:{}, projects:SEEDED.map(seededProject), active:"p1", deleted:{}, log:[], settings:{name:"Andrés", voice:false}, module:"overview", openWeek:null};}
 function load(){
   let raw=null; try{ raw=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
   S = raw? Object.assign(defaults(), raw) : defaults();
-  if(!S.projects || !S.projects.length) S.projects=[newProject("Project 01")];
-  // migrate older saves: seeded flags must come from the SAVE, not from defaults —
-  // otherwise the merge marks p2 as already-seeded and the injection never fires
-  S.seeded = (raw && raw.seeded) ? raw.seeded : {p1:true};
-  if(!S.seeded.p2 && !S.projects.find(p=>p.id==="p2")){
-    const p2=newProject("InterNavia / Interflex — Agent Projects", SEED_INAV); p2.id="p2";
-    S.projects.push(p2);
-  }
-  S.seeded.p2=true; // handled either way; a later user delete of p2 stays deleted
+  if(!S.projects) S.projects=[];
+  // Inject seeded projects by PRESENCE, not flags: an earlier build wrote a bad
+  // "already seeded" flag into saves, so flags can't be trusted. Intentional
+  // deletions are tracked explicitly in S.deleted instead.
+  S.deleted = (raw && raw.deleted) || {};
+  delete S.seeded;
+  for(const def of SEEDED) if(!S.deleted[def.id] && !S.projects.find(p=>p.id===def.id)) S.projects.push(seededProject(def));
+  if(!S.projects.length) S.projects=[newProject("Project 01")];
   if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); refreshHud(); }
 function P(){ return S.projects.find(p=>p.id===S.active); }
@@ -441,6 +444,7 @@ function addProject(){ const name=prompt("New project name (e.g. 'InterNavia —
 function renameProject(){ const name=prompt("Rename project:", P().name); if(!name) return; P().name=name.trim(); save(); render(); }
 function deleteProject(){ if(S.projects.length<=1){ alert("At least one project must remain."); return; }
   if(confirm(`Delete project "${P().name}" and ALL its data (inventory, scores, vault)?`)){
+    S.deleted[S.active]=true; // remember, so a seeded project is never re-injected
     S.projects=S.projects.filter(p=>p.id!==S.active); S.active=S.projects[0].id; openWf=null; scoringWf=null; save(); render(); } }
 function projPct(p){ const vs=Object.values(p.vault); const done=VAULT_ITEMS.filter(it=>(p.vault[it.id]||{}).status==="done").length;
   return Math.round(100*done/VAULT_ITEMS.length); }

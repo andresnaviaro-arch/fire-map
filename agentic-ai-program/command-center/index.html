@@ -225,7 +225,7 @@
   </nav>
   <main id="view"></main>
 </div>
-<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span> · <span class="mono" style="color:var(--cyan)">BUILD 5</span></footer>
+<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span> · <span class="mono" style="color:var(--cyan)">BUILD 6</span></footer>
 
 <script>
 "use strict";
@@ -410,10 +410,22 @@ const SEED_INAV = [
 
 /* ============================== STATE ============================== */
 const KEY="agentcc.v2";
+const SEED_ANAELI = [
+ {name:"Client intake & legal triage", trigger:"New consultation arrives (WhatsApp, web form, referral, walk-in)", freq:"[confirm] daily", people:"Client, intake staff, assigned abogado", systems:"[confirm] WhatsApp, email, intake forms, case spreadsheet/system", time:"[confirm] 20–60 min per consultation", pain_note:"Unstructured stories; classifying area of law and urgency; capturing facts completely the first time", consequence:"Missed deadlines (esp. tutela windows) and misrouted cases; first impression drives conversion", decisions:"Area of law, urgency, viability, which lawyer, fee track", sensitive:"Everything — client identity, facts, health/employment data (Ley 1581 habeas data)", ai:"Anaeli interviews the client in Spanish, extracts structured facts, classifies matter & urgency, drafts the intake summary for lawyer review"},
+ {name:"Derecho de petición drafting", trigger:"Client needs a petition to an entity (EPS, fondo de pensiones, employer, state agency)", freq:"[confirm] several per week — highest volume document", people:"Client, abogado (review), Anaeli (draft)", systems:"Templates, client data, entity directories", time:"[confirm] 30–90 min each today", pain_note:"Repetitive structure but facts vary; tracking the 15-day response terms afterward", consequence:"Core service volume; quality and speed differentiate the firm", decisions:"Legal basis, what to request, addressee, follow-up path if unanswered", sensitive:"Client personal data, health/pension records", ai:"Anaeli generates the petición from structured facts with correct legal basis, tracks response deadlines, drafts escalation (insistencia or tutela) when terms lapse"},
+ {name:"Acción de tutela drafting & filing prep", trigger:"Fundamental right violated (salud, mínimo vital, petición unanswered) — often urgent", freq:"[confirm] weekly", people:"Client, abogado, Anaeli", systems:"Templates, jurisprudence sources, court filing (Rama Judicial)", time:"[confirm] 2–4 h each", pain_note:"Urgency; assembling facts + pruebas + the right constitutional grounds and precedent fast", consequence:"Client's fundamental rights on a clock; firm reputation rides on outcomes", decisions:"Procedencia (subsidiarity/immediacy), rights invoked, precedent cited, remedy requested", sensitive:"Highly sensitive personal/medical data", ai:"Anaeli drafts the tutela with matched Corte Constitucional precedent (T-/SU- sentencias), builds the evidence list, flags procedencia weaknesses — lawyer signs and files"},
+ {name:"Legal research & jurisprudence lookup", trigger:"Any matter needing current law or precedent (sentencias, leyes, decretos, conceptos)", freq:"[confirm] daily", people:"Abogados", systems:"Relatoría Corte Constitucional/CSJ/Consejo de Estado, SUIN-Juriscol, secondary sources", time:"[confirm] 1–3 h per research question", pain_note:"Scattered sources; verifying a sentencia is current and applicable; citation accuracy", consequence:"Wrong or outdated authority undermines filings and credibility", decisions:"Which authority controls; how strong is the precedent match", sensitive:"Low (public law), but reveals case strategy", ai:"Anaeli retrieves and summarizes candidate authorities WITH verifiable citations — every cite checked against source before use; abstains when unsure rather than inventing (hallucinated case law is the #1 legal-AI risk)"},
+ {name:"Expediente monitoring (Rama Judicial)", trigger:"Active cases — estados, autos, and rulings published on court portals", freq:"Daily sweep across all active cases", people:"Abogado/assistant per case", systems:"Consulta de Procesos (Rama Judicial), email notifications, case list", time:"[confirm] 30–60 min/day", pain_note:"Manual portal checks per radicado; easy to miss a notification on low-activity cases", consequence:"A missed auto = missed término = malpractice exposure", decisions:"What each actuación means; what response it requires", sensitive:"Case identities", ai:"Anaeli checks radicados on schedule, detects new actuaciones, summarizes each, and opens a task with the computed response deadline"},
+ {name:"Términos procesales calendar", trigger:"Every filing, notification, or auto starts a legal clock", freq:"Continuous", people:"All lawyers", systems:"[confirm] Calendar, spreadsheet, memory", time:"[confirm] 1–2 h/week upkeep", pain_note:"Computing business days, festivos, judicial vacancy; multiple overlapping clocks per case", consequence:"THE existential risk of a law practice — blown deadlines lose cases and licenses", decisions:"Term computation rules per procedure type", sensitive:"Case strategy timing", ai:"Anaeli computes deadlines (hábiles vs. calendario, festivos colombianos), maintains the master calendar, escalates with increasing urgency — human confirms every computed date"},
+ {name:"Contract & document review", trigger:"Client submits a contract, settlement, or liquidation to review", freq:"[confirm] weekly", people:"Client, abogado", systems:"Word/PDF, templates, checklists", time:"[confirm] 1–3 h each", pain_note:"Dense documents; consistent issue-spotting under time pressure", consequence:"Missed abusive clauses or errors surface later as disputes", decisions:"Risk assessment, negotiation points, sign/don't-sign advice", sensitive:"Commercial and personal terms", ai:"Anaeli produces a clause-by-clause issue map against Colombian law (cláusulas abusivas, vicios) with severity flags — lawyer forms the advice"},
+ {name:"Client status communication", trigger:"Case events; client anxiety pings ('¿cómo va mi proceso?')", freq:"[confirm] daily interruptions", people:"Clients, lawyers, staff", systems:"WhatsApp, email, phone", time:"[confirm] 1–2 h/day fragmented", pain_note:"Same questions repeatedly; translating legal state into plain Spanish; interruptions kill focus", consequence:"Client trust and referrals; complaints usually stem from silence, not outcomes", decisions:"What to share, tone, expectation management", sensitive:"Case status, personal data — verify identity before disclosing", ai:"Anaeli drafts plain-Spanish status updates from the case record for approval; answers routine procedural questions with the lawyer's sign-off rules"},
+ {name:"Case file & evidence organization", trigger:"Documents arrive continuously (client uploads, court PDFs, opposing filings)", freq:"Continuous", people:"Staff, lawyers", systems:"[confirm] Drive/folders, physical files, email attachments", time:"[confirm] 2–4 h/week", pain_note:"Naming chaos; finding the one document during a hearing; incomplete expedientes", consequence:"Lost evidence weakens cases; disorganization wastes billable time", decisions:"Relevance, privilege, completeness", sensitive:"Everything in the file", ai:"Anaeli classifies, renames, indexes and summarizes incoming documents per expediente; builds chronologies and evidence inventories"}
+];
+
 const SEEDED=[
  {id:"p1", name:"Wesco / Anixter — Sales Workflows", seed:()=>SEED_INV},
  {id:"p2", name:"InterNavia / Interflex — Agent Projects", seed:()=>SEED_INAV},
- {id:"p3", name:"Anaeli", seed:()=>[]}
+ {id:"p3", name:"Anaeli — AI Legal Agent (Gestión Jurídica)", seed:()=>SEED_ANAELI}
 ];
 let S;
 function newProject(name, seedArr){ return {id:"p"+Date.now()+Math.floor(Math.random()*1e4), name,
@@ -431,7 +443,13 @@ function load(){
   // deletions are tracked explicitly in S.deleted instead.
   S.deleted = (raw && raw.deleted) || {};
   delete S.seeded;
-  for(const def of SEEDED) if(!S.deleted[def.id] && !S.projects.find(p=>p.id===def.id)) S.projects.push(seededProject(def));
+  for(const def of SEEDED){
+    const ex=S.projects.find(p=>p.id===def.id);
+    if(!ex){ if(!S.deleted[def.id]) S.projects.push(seededProject(def)); continue; }
+    // upgrade path: a seeded project saved before its seed existed (empty,
+    // untouched inventory) receives the seed; user-entered content is never replaced
+    if(!ex.inventory.length && def.seed().length){ ex.inventory=seededProject(def).inventory; if(ex.name==="Anaeli") ex.name=def.name; }
+  }
   if(!S.projects.length) S.projects=[newProject("Project 01")];
   if(!S.projects.find(p=>p.id===S.active)) S.active=S.projects[0].id; }
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); refreshHud(); }

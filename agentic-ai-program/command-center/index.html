@@ -225,7 +225,7 @@
   </nav>
   <main id="view"></main>
 </div>
-<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span> · <span class="mono" style="color:var(--cyan)">BUILD 6</span></footer>
+<footer>LOCAL DATA ONLY — everything you type stays in this browser (localStorage). Use LOG &amp; DATA → EXPORT for backups. · Curriculum source: <span class="mono">agentic-ai-program/</span> · <span class="mono" style="color:var(--cyan)">BUILD 7</span></footer>
 
 <script>
 "use strict";
@@ -360,9 +360,52 @@ const WEEKS = [
   tasks:[{id:"w12_train",label:"Training plan with dates you could run"},
     {id:"w12_reh",label:"Demo rehearsed against a skeptical listener"},
     {id:"w12_exit",label:"EXIT: full package survives the three killer questions"}],
-  qtest:"Can you honestly say: 'I can identify opportunities, redesign workflows, build & evaluate prototypes, establish governance, train users, and lead a pilot from strategy through implementation'?"}
+  qtest:"Can you honestly say: 'I can identify opportunities, redesign workflows, build & evaluate prototypes, establish governance, train users, and lead a pilot from strategy through implementation'?"},
+ {id:"b1", part:5, code:"AUT 01", title:"Spot Automation Opportunities",
+  objective:"Find the workflows where no-code automation pays off fastest — the rung below agents.",
+  brief:["Automation executes fixed steps; AI interprets; agents decide. Most value hides in the first two.",
+    "Trigger → action thinking: form, email, schedule, new row, webhook.",
+    "Rule of thumb: if it flowcharts with no 'it depends', it's an automation, not an agent.",
+    "Tag every inventory workflow: AUTOMATE / AI-ASSIST / AGENT."],
+  tasks:[{id:"b1_tag",label:"All project inventories tagged AUTOMATE / AI-ASSIST / AGENT"},
+    {id:"b1_brief",label:"PLAYBOOK — one-page brief: 2–3 automatable workflows (trigger, steps, hours lost, 'done')"}],
+  qtest:"A colleague reads the brief. 'Yes, and also…' = communicated. 'But how would that work?' = you wrote a wish, not a workflow."},
+ {id:"b2", part:5, code:"AUT 02", title:"Map the Process A→Z",
+  objective:"A map so precise a machine — or a stranger — could execute it.",
+  brief:["Every step: action, input (and where from), output (and where to). Decisions as explicit rules.",
+    "The three forgotten layers: failure paths, a QA checkpoint, metrics that land where you'll see them.",
+    "Build the map from a recorded walkthrough, not memory — memory smooths over the exceptions."],
+  tasks:[{id:"b2_walk",label:"Walk the manual process once, recording every click and decision"},
+    {id:"b2_map",label:"PLAYBOOK — detailed process map incl. failure paths, QA checkpoint, AI-step flags"}],
+  qtest:"Could someone execute the workflow using ONLY the page? Every question they ask is a hole the automation will fall through."},
+ {id:"b3", part:5, code:"AUT 03", title:"Build with No-Code + AI",
+  objective:"Ship a working end-to-end automation: ≥2 tools connected, an AI step in the chain.",
+  brief:["Zapier = easiest; Make = visual power + price; n8n = self-hosted (data stays yours — Anaeli-relevant).",
+    "AI steps: structured output only, validation gate after, draft-don't-send for anything customer-facing.",
+    "Test with messy real samples. Add an error route — silent failure is worse than no automation.",
+    "Watch task quotas and API cost per run × runs per day."],
+  tasks:[{id:"b3_build",label:"PLAYBOOK — functional automation: ≥2 tools + AI step + validation gate + error route"},
+    {id:"b3_doc",label:"One-page documentation: trigger, flow, AI prompt, failure behavior, cost, minutes saved"}],
+  qtest:"One week unattended: zero silent failures and you only touched approval gates? Real. Checked it daily 'just in case'? Fix the error route first."},
+ {id:"b4", part:5, code:"AUT 04", title:"Pitch, Adoption & Guardrails",
+  objective:"Turn a working automation into an adopted one.",
+  brief:["Lead with before/after, never the tool name. Answer the two silent fears: replacement and blame.",
+    "Recruit one visible early user; show the failure behavior on purpose.",
+    "Guardrails: oversight & kill switch, data/compliance per platform (Ley 1581 for Anaeli), brand rules, cost ceiling."],
+  tasks:[{id:"b4_pitch",label:"5-minute pitch rehearsed (before/after + failure demo)"},
+    {id:"b4_gov",label:"PLAYBOOK — governance framework OR rollout plan (one page)"}],
+  qtest:"Skeptic's first question is 'what happens when it breaks?' and your page already answers it — done. First question about the tech — re-lead the pitch."},
+ {id:"b5", part:5, code:"AUT 05", title:"Bridge to Agents (Bonus Workshop)",
+  objective:"Add one agent step to your automation; know the limits; hand off into Part III.",
+  brief:["AI step answers a question; an agent pursues a goal with tools. Ask: which SINGLE step needs agency?",
+    "Try the same small task across agent platforms (incl. Claude Projects / scheduled tasks / Claude Code); note cost & verification burden.",
+    "Agents fail creatively — validation gates matter MORE. Autonomy ≤ 2 for anything outward-facing.",
+    "Your B-track build is a legitimate Part III head start — log it in the project's VAULT."],
+  tasks:[{id:"b5_up",label:"PLAYBOOK — automation upgraded with one agent step (rails kept)"},
+    {id:"b5_limits",label:"Half-page limits assessment: cost/run, failure modes, gates, evidence to raise autonomy"}],
+  qtest:"Can you name precisely why THAT step needed an agent and the others didn't? That answer is the whole workshop."}
 ];
-const PARTS = ["","I · FOUNDATIONS","II · A.G.E.N.T. STRATEGY","III · B.U.I.L.D. STUDIO","IV · ADOPTION"];
+const PARTS = ["","I · FOUNDATIONS","II · A.G.E.N.T. STRATEGY","III · B.U.I.L.D. STUDIO","IV · ADOPTION","B · AUTOMATION STUDIO (ELECTIVE)"];
 
 const DIMS = [
  {k:"bv", n:"Business value", grp:"v"}, {k:"fq", n:"Frequency", grp:"v"}, {k:"tb", n:"Time burden", grp:"v"},
@@ -528,7 +571,7 @@ function rOverview(){
     <div class="ringwrap">
       ${ring(overallPct())}
       <div style="flex:1;min-width:250px">
-        ${[1,2,3,4].map(p=>`<div class="phasebar">
+        ${[1,2,3,4,5].map(p=>`<div class="phasebar">
           <div class="lbl"><span>PART ${PARTS[p]}</span><span class="mono">${partPct(p)}%</span></div>
           <div class="track"><div class="fill" style="width:${partPct(p)}%"></div></div></div>`).join("")}
       </div>
@@ -573,8 +616,8 @@ function rOverview(){
 /* ============================== RENDER: PROGRAM ============================== */
 function rProgram(){
   const cw=currentWeek();
-  return `<div class="panel"><h2>Mission Timeline<span class="sub">// 12 weeks · 4 phases · complete once, reuse forever</span></h2>
-  ${[1,2,3,4].map(p=>`
+  return `<div class="panel"><h2>Mission Timeline<span class="sub">// 12 weeks + 5-week elective · complete once, reuse forever</span></h2>
+  ${[1,2,3,4,5].map(p=>`
     <p style="margin:14px 0 8px;color:var(--muted);font-size:10px;letter-spacing:.24em">PART ${PARTS[p]}</p>
     ${WEEKS.filter(w=>w.part===p).map(w=>{
       const pct=weekPct(w), open=S.openWeek===w.id;

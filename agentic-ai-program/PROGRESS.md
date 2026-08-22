@@ -45,6 +45,19 @@ in `work/` and you could explain it to a vice president in five minutes.
 
 - [ ] **Weeks 11–12** — Executive package and trainer proposal (`part-4-adoption/week-11-12-executive-package.md`, outline: `templates/05-executive-package-outline.md`)
 
+## Track B — Automation Studio (elective, parallel with Parts I–II)
+
+- [ ] **B1** — Spot automation opportunities (`track-b-automation/week-b1-spot-opportunities.md`)
+  - [ ] Playbook: one-page brief, 2–3 automatable workflows (tagged AUTOMATE / AI-ASSIST / AGENT)
+- [ ] **B2** — Map the process A→Z (`track-b-automation/week-b2-map-the-process.md`)
+  - [ ] Playbook: detailed process map with failure paths + QA checkpoint
+- [ ] **B3** — Build with no-code + AI (`track-b-automation/week-b3-build-with-nocode.md`)
+  - [ ] Playbook: functional automation, ≥2 tools + AI step + error route, documented
+- [ ] **B4** — Pitch, adoption & guardrails (`track-b-automation/week-b4-pitch-and-guardrails.md`)
+  - [ ] Playbook: governance framework OR rollout plan
+- [ ] **B5** — Agents bridge workshop (`track-b-automation/week-b5-agents-bridge.md`)
+  - [ ] Playbook: automation upgraded with one agent step + limits assessment
+
 ## Exit statement
 
 When everything above is checked, you should be able to say — with evidence:

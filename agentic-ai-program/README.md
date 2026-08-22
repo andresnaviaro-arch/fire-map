@@ -24,6 +24,13 @@ content is reproduced.
 | A.G.E.N.T. Strategy | 3–5 | Select and completely redesign one valuable workflow | `part-2-agent-strategy/` |
 | B.U.I.L.D. Studio | 6–10 | Architect, build, test, and document a working prototype | `part-3-build-studio/` |
 | Enterprise Adoption | 11–12 | Business case, governance package, demo, and rollout roadmap | `part-4-adoption/` |
+| **Track B — Automation Studio** (elective) | B1–B5 | Ship a real no-code automation with an AI step, then bridge it into agents | `track-b-automation/` |
+
+Track B covers the layer *below* agents — AI-powered no-code automation
+(Make.com, Zapier, n8n): opportunity spotting, process mapping, an end-to-end
+build, pitch & guardrails, and a bonus agents workshop. Run it in parallel with
+Parts I–II or standalone; it feeds off the same workflow inventories and hands
+its working build into Part III as a head start.
 
 ## The two frameworks
 
